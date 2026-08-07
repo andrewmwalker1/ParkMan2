@@ -533,14 +533,22 @@ Ownership needs more than one `customer_id`; it doesn't, because "two
 people" lives inside the Customer record itself.
 
 Fields:
-- **Customer 1** (always present): Title, First Name, Surname, Phone,
-  Email, and a **"receives billing/correspondence"** flag.
-- **Customer 2** (optional — may not exist): same shape as Customer 1 —
-  Title, First Name, Surname, Phone, Email, and its own
+- **Customer 1 is the Primary Contact, Customer 2 the Secondary
+  Contact** — renamed/clarified 7 Aug 2026 so the slots carry their
+  actual meaning rather than an arbitrary "1 vs 2" label. Andy's
+  example: a family buys together, the parents are the Primary Contact
+  and generally pay the bills, their kids are the Secondary Contact.
+  "Generally" is doing real work in that sentence — it's not an absolute
+  rule, which is exactly why the per-person billing flag below still
+  exists independently of who's Primary vs Secondary.
+- **Primary Contact** (always present): Title, First Name, Surname,
+  Phone, Email, and a **"receives billing/correspondence"** flag.
+- **Secondary Contact** (optional — may not exist): same shape as
+  Primary — Title, First Name, Surname, Phone, Email, and its own
   "receives billing/correspondence" flag. The flag on each matters
   because either, both, or neither combination is possible — e.g. only
-  Customer 1's email actually gets bills even though Customer 2 is a
-  named owner too.
+  the Primary Contact's email actually gets bills even though the
+  Secondary Contact is a named owner too.
 - **Correspondence Salutation** (free text) — how the customer is
   addressed in email/day-to-day correspondence, in their own words: could
   be a first name/nickname ("Andy" rather than "Andrew"), or a couple
@@ -550,7 +558,7 @@ Fields:
 - **Address Salutation** (free text) — the letter/label form, e.g.
   "Mr & Mrs J Smith". Same reasoning: not derived, entered directly.
 - **Address** — one shared address for the whole Customer account (not
-  per Customer 1/2). **Resolved (7 Aug 2026): structured to mirror
+  per Primary/Secondary Contact). **Resolved (7 Aug 2026): structured to mirror
   CampManager's own shape** (Address text block, County, Province,
   Language) rather than inventing a fresh layout — deliberately, so
   that importing existing CampManager customer data into ParkMan2 later
@@ -560,16 +568,17 @@ Fields:
   reason, not because Tree Tops itself needs them.
 - **Delivery preference** — email or paper, **defaults to email**. One
   account-level setting (how bills go out), separate from the per-person
-  billing flags above (which of Customer 1/2's emails actually receive
-  it, when the method is email).
-- **No relationship field between Customer 1 and Customer 2** — explicitly
-  not needed; they're just the two people on the account, nothing about
-  billing or correspondence depends on knowing *how* they're related to
-  each other. (This is separate from the **Family Member** concept used
-  for the Transfer Fee waiver in the Purchase & Licence Agreement section
-  above, which is about the relationship between an *outgoing* and
-  *incoming* owner at a resale, not between Customer 1 and 2 on the same
-  account — that remains a separate, still-open Phase 2 billing question.)
+  billing flags above (which of the Primary/Secondary Contact's emails
+  actually receive it, when the method is email).
+- **No relationship field between Primary and Secondary Contact** —
+  explicitly not needed; they're just the two people on the account,
+  nothing about billing or correspondence depends on knowing *how*
+  they're related to each other. (This is separate from the **Family
+  Member** concept used for the Transfer Fee waiver in the Purchase &
+  Licence Agreement section above, which is about the relationship
+  between an *outgoing* and *incoming* owner at a resale, not between
+  the two contacts on the same account — that remains a separate,
+  still-open Phase 2 billing question.)
 - **Next of Kin** — up to **two** entries, each just: Name, Relationship
   (free text, e.g. "Son"), Contact number. Entirely separate from Customer
   1/2 — an emergency-contact concept, not a billing one.
