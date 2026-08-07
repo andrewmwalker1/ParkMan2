@@ -1,6 +1,7 @@
 # ParkMan2 — Project Briefing
 
-**Last updated:** 7 Aug 2026 — initial draft, no code written yet
+**Last updated:** 7 Aug 2026 — Rates/Water/Refuse calculation and
+proration resolved; still no code written
 
 ## Who you're talking to
 
@@ -351,10 +352,16 @@ system.
   — needs a per-customer delivery preference, and the system needs to
   produce a genuinely printable bill, not just an email-shaped one.
 
-### Rates, Water & Refuse (confirmed 6 Aug 2026)
+### Rates, Water & Refuse (confirmed 6 Aug 2026, proration corrected 7 Aug 2026)
 
 - Calculated externally by the accountant as one supplied figure — not
-  something the system calculates independently.
+  something the system calculates independently. The accountant's
+  figure already factors in things like occupied pitch count and a
+  deduction for the park's own water use around the site; ParkMan2
+  never reproduces that working, it only **holds the resulting
+  values** (see the "Resolved (7 Aug 2026)" note under Purchase &
+  Licence Agreement below for why this replaces the earlier open
+  question about a ÷ occupied-pitches formula).
 - Runs its own annual cycle, **1 July to 30 June** — a different,
   **offset** calendar from the Pitch Fee year (1 March). These are two
   genuinely separate annual cycles running at once, not one shared
@@ -362,9 +369,19 @@ system.
   never accidentally conflated.
 - Billed in **June**, due **1 July** — same "bill in advance of the
   period" shape as Pitch Fee's Jan-bill/Feb-due/March-start pattern.
-- Mid-cycle joiners are pro-rated from their actual start date to 30
-  June — confirms the billing engine needs genuine day-based proration
-  as a real, currently-needed capability.
+- **Proration is whole-months-on-park, not day-based** (corrects the
+  earlier assumption that this followed the same day-based proration
+  as Utilities/Pitch-Fee-refund):
+  - A customer who's been on park **12 months or more** by the time a
+    Rates Year starts pays the **full** amount — no proration at all.
+  - A customer who **joined partway through the Rates Year** pays only
+    for the **whole calendar months** they were actually on park during
+    that year, not a day-count.
+  - A customer who joins **close to when the June bill run actually
+    goes out** may simply not be billed for that cycle at all, at
+    Andy's discretion — consistent with the existing
+    discretionary/negotiated new-joiner billing pattern noted below,
+    not a separate rule.
 - Does not vary by Area (per Andy, though whether it varies by pitch
   type/size, e.g. Lodge vs standard, wasn't explicitly addressed —
   assumed uniform for now unless corrected).
@@ -442,15 +459,14 @@ facts that belong in the data model immediately:
   no refund at all after 30 June regardless of month). A distinct rule
   from the day-based utilities proration, needed specifically for the
   Leave/refund case.
-- **Rates calculation may be a real formula, not just a handed-over
-  figure** — the document states Rates is "the total of these charges
-  for the Park for the previous Rates Year, divided by the number of
-  occupied pitches at the start of that Rates Year." This appears to
-  differ from what Andy described earlier (accountant hands over one
-  figure). *(Open: confirm whether that division is the actual current
-  process — accountant does the division and hands over the per-pitch
-  result — or whether the contract describes the legal basis while
-  practice is simpler.)*
+- **Resolved (7 Aug 2026):** the licence agreement's "total ÷ occupied
+  pitches" wording is the accountant's internal method, not something
+  ParkMan2 needs to replicate. The accountant's headline figure already
+  accounts for occupied pitches **and** deducts a percentage for the
+  park's own water use around the site — genuinely external, multi-factor
+  working the system has no need or ability to reproduce. ParkMan2 only
+  ever holds the resulting values (Rates / Water / Refuse), never
+  calculates them.
 - **"Pitch Services" is the contract's umbrella term** for Water,
   Electricity, Gas, Grounds maintenance, Sewerage, Waste management,
   and Wi-Fi — each flagged per-agreement as included in the Pitch Fee,
@@ -518,8 +534,10 @@ Phase 1 or 2 — noted here so the roadmap accounts for it.
 
 ## Open questions / not yet decided
 
-- Billing calculation rules — how Pitch Fees, Utilities, and
-  Rates/Water/Refuse actually get calculated in practice.
+- Billing calculation rules for **Pitch Fees and Utilities** — how these
+  actually get calculated in practice. (Rates/Water/Refuse is resolved:
+  the system never calculates it, only holds the accountant's supplied
+  figure — see that section above.)
 - Whether Ownership/Placement history is needed in full from Phase 1,
   or whether a simpler current-state-only version ships first with
   history added later — a build-sequencing question, not a modelling
