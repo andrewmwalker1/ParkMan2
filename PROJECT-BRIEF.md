@@ -558,6 +558,16 @@ a second person" needs one straightforward query against CustomerPerson
 now, instead of checking four different sets of columns. It also means
 a future edge case (three people on one account, say) is just another
 row, not a schema change.
+
+**Provisional, not final (7 Aug 2026):** Andy's take — "feels a little
+over normalised" — is a fair concern to keep in mind, not dismiss. The
+real cost: ~194 of 200 current caravans have exactly one owner, so
+almost every read/write against Customer means joining two tables for
+the common case, in exchange for clean handling of the rare 5-6 multi-
+owner accounts. Going with the normalized version for now, but if it
+proves genuinely awkward once real screens are being built (rather than
+just modelled on paper), collapsing back toward something flatter is a
+legitimate revisit, not a failure of the design.
 - **Correspondence Salutation** (free text) — how the customer is
   addressed in email/day-to-day correspondence, in their own words: could
   be a first name/nickname ("Andy" rather than "Andrew"), or a couple
