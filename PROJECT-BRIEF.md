@@ -606,12 +606,15 @@ Fields on **Customer**:
   wants to be addressed doesn't reliably follow from their legal name.
 - **Address Salutation** (free text) — the letter/label form, e.g.
   "Mr & Mrs J Smith". Same reasoning: not derived, entered directly.
-- **Address, County, Province, Language** — structured to mirror
-  CampManager's own shape rather than inventing a fresh layout,
-  deliberately, so importing existing CampManager customer data later
-  is a closer field-for-field match. Province and Language will likely
-  sit blank/unused for a single North-Wales park, but are kept for that
-  same import-compatibility reason.
+- **Address, Postcode, County, Language** — corrected 7 Aug 2026 after
+  seeing it mocked up: **Province dropped entirely** (Andy: not needed),
+  and **Postcode split out as its own field** rather than sitting as the
+  last line inside the free-text Address block — it's structured data
+  people search/sort/validate on, not prose. Address itself stays a
+  multi-line free-text block (street, town) for the same
+  CampManager-shape reason as before; Language will likely sit
+  blank/unused for a single North-Wales park but is kept for that same
+  reason.
 - **Delivery preference** — email or paper, **defaults to email**. One
   setting for the household (how bills go out), separate from each
   person's own `receives billing` flag (which of the two emails actually
