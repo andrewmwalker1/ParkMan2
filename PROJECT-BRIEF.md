@@ -541,7 +541,14 @@ Fields:
 - **Address Salutation** (free text) — the letter/label form, e.g.
   "Mr & Mrs J Smith". Same reasoning: not derived, entered directly.
 - **Address** — one shared address for the whole Customer account (not
-  per Customer 1/2).
+  per Customer 1/2). **Resolved (7 Aug 2026): structured to mirror
+  CampManager's own shape** (Address text block, County, Province,
+  Language) rather than inventing a fresh layout — deliberately, so
+  that importing existing CampManager customer data into ParkMan2 later
+  is a closer field-for-field match rather than a remapping exercise.
+  Province and Language will likely sit blank/unused for a single
+  North-Wales park, but are kept for that same import-compatibility
+  reason, not because Tree Tops itself needs them.
 - **Delivery preference** — email or paper, **defaults to email**. One
   account-level setting (how bills go out), separate from the per-person
   billing flags above (which of Customer 1/2's emails actually receive
@@ -557,9 +564,31 @@ Fields:
 - **Next of Kin** — up to **two** entries, each just: Name, Relationship
   (free text, e.g. "Son"), Contact number. Entirely separate from Customer
   1/2 — an emergency-contact concept, not a billing one.
-- **Notes** — a single free-text field for the whole Customer account, not
-  one per sub-customer (deliberately, to avoid the confusion of "which
-  person's notes is this").
+- **Notes** — one shared history for the whole Customer account, not one
+  per sub-customer (deliberately, to avoid the confusion of "which
+  person's notes is this"). **Resolved (7 Aug 2026): an append-only
+  dated log, not a single free-text field** — the only place staff can
+  record commentary about a customer, confirmed against a real
+  CampManager notes screen showing a running, dated history rather than
+  one edited-in-place blob. Same shape as the Maintenance app's
+  `job_activity` log (entry text + actor + timestamp), for the same
+  reason: a history you can't accidentally overwrite. Deliberately
+  designed now with an eye on the later document-generation roadmap
+  item above — once ParkMan2 can generate letters/emails from templates,
+  each generated/sent document should log its own entry here (and the
+  document itself gets stored, not just referenced), so this log becomes
+  the one place to see everything that's ever been said to or about a
+  customer. Not building document generation now, but shaping this log
+  as append-only from day one avoids a redesign later.
+- **Considered and explicitly declined (7 Aug 2026): a "Blacklisted"
+  flag**, seen on the same CampManager screen — not a concept Andy wants
+  carried into ParkMan2.
+- **Considered and explicitly declined (7 Aug 2026): a CampManager-style
+  "Reference" number** (e.g. `2317713`). That exists because CampManager
+  runs one shared database across all of its client parks, so it needs a
+  cross-tenant unique ID — not a Tree Tops concept, and not something
+  ParkMan2 needs to replicate since each Business already gets its own
+  separate database (see Roadmap above). A normal internal ID is enough.
 
 ### Leads (separate from Customer)
 
