@@ -169,6 +169,17 @@ Confirmed so far (Andy's own description, 6 Aug 2026):
     point of keeping Ownership/Placement as proper historical tables
     rather than current-state columns), a view onto it can wait
     indefinitely without losing anything.
+  - **Considered and declined (7 Aug 2026): caching current state
+    directly on Caravan** (`current_pitch_id`,
+    `current_primary_customer_id`, `current_secondary_customer_id`) to
+    avoid the join Ownership/Placement need for "who owns this and
+    where is it right now." Andy's "over normalised" reaction came up a
+    third time at this exact query — a real signal, but the decision for
+    now is to **keep the plain two-table design** and let it prove
+    itself (or not) once real screens are being built, rather than add
+    denormalized cache columns pre-emptively. Worth revisiting this
+    specific option first if the join genuinely becomes annoying in
+    practice.
 
 ### Areas, Bands & Services (added 6 Aug 2026, from a real Tree Tops pitch-fee sheet)
 
