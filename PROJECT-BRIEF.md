@@ -615,10 +615,19 @@ single place.
   its Pitch sits in, not stored per Caravan/Ownership at all. Updating a
   Season's dates for a new year updates every caravan under it in one
   move — this is the actual fix for the CampManager pain point.
-- *(Open: do Season dates ever genuinely change year to year at Tree
-  Tops, or is the month/day pattern effectively permanent once set? If
-  they never change, Season doesn't need year-versioning; if they can
-  shift, it needs the same kind of `year` column PitchBandRate has.)*
+- **Resolved (7 Aug 2026): Season dates generally don't change year to
+  year** — no routine year-versioning needed, `start_date`/`end_date`
+  can just live directly on the Season row. The one real exception was
+  Covid lockdowns forcing a change — an exceptional, rare event, not a
+  pattern to design around; a manual date edit on the rare occasion it's
+  ever needed again is fine.
+- **New charge type surfaced here: February use, for 9-month-season
+  customers.** Andy offers customers on the 9-month Season the option to
+  use their caravan in February too (outside their normal season) for an
+  extra charge — usually **£300 + VAT**, but adjustable. One-off,
+  negotiable per the same discretionary pattern as the WiFi
+  install/move charges elsewhere in this brief, not a fixed system
+  constant.
 
 ### Licence (new entity, 7 Aug 2026)
 
@@ -642,18 +651,35 @@ end_date`.
   **30-year** — a sensible pre-filled suggestion when creating a
   Licence, not an enforced rule (same "suggest, staff can override"
   pattern as Reading Round rate defaults elsewhere in this brief).
-- *(Open: how does an **annual** licence actually renew in practice —
-  does staff create a fresh one-year Licence row each year, or does an
-  existing row's `end_date` just get pushed forward? And does a Licence
-  survive a caravan **Move** to a different pitch within the park, get
-  closed and a new one opened, or something else?)*
+- **Resolved (7 Aug 2026): annual renewal updates the same Licence row**
+  — staff push `end_date` forward on the existing row rather than
+  creating a new one each year, plus a note logged in the Customer's
+  activity log that a new annual agreement was offered. Andy: fewer than
+  20 customers are on annual terms at any time, so this stays a manual,
+  low-volume task rather than something needing batch tooling.
+- **Signed-and-returned tracking is a real requirement.** Annual
+  agreements have to be physically signed and returned by the customer
+  each year, and Andy needs to track whether that's happened — Licence
+  needs its own signed/returned status (e.g. a `signed_returned_date`,
+  null while outstanding), not just the term dates. This is the same
+  shape as the PAT/Gas Test "needs chasing" problem elsewhere in this
+  brief — an upcoming/overdue view will matter here too, not just the
+  raw field.
+- *(Open: does a Licence survive a caravan **Move** to a different pitch
+  within the park, or does it get closed and a new one opened against
+  the new `pitch_id`? Not yet addressed.)*
 
 ### Caravan entity — scoped 7 Aug 2026
 
 Grounded against the same real CampManager "Unit Summary" printout.
 
-- **Make, Model, Year, Colour, Serial Number** — straightforward, all
+- **Make, Model, Colour, Serial Number** — straightforward, all
   confirmed real fields.
+- **Model Year and Build Date are two separate fields, not one "Year".**
+  Andy: manufacturers release next year's model early — a 2026-model
+  caravan could genuinely have been built in June 2025. Collapsing this
+  into a single Year field would lose real information buyers care
+  about.
 - **Length, Width, Bedrooms, Berths** — all real size fields. Bedroom
   count alone doesn't tell you sleeping capacity: a 2-bed sleeps 6 with
   a lounge pull-out sofa bed, 4 without; a 3-bed sleeps 8 with one. Andy
@@ -691,16 +717,50 @@ Grounded against the same real CampManager "Unit Summary" printout.
   **Resolved: make this a data-driven lookup, not a fixed set** — so it
   can vary per Business (Andy's example: "some parks might have staff
   units") rather than being hardcoded, the same per-Business-
-  configuration pattern already used for Services etc. *(Open: does
-  "Stock Unit" duplicate what Placement's `location_type = 'Display'`
-  already tells us — i.e. is Status really only about ownership/occupancy
-  type (Private/Rental/Residential), with "for sale" purely a Placement
-  fact rather than a Status value at all? Worth resolving so ParkMan2
-  doesn't inherit the exact two-places-to-update problem CampManager
-  has.)*
-- **Condition** ("New" seen on the printout) — real field? *(Open: what
-  are the other values, and is this genuinely used/wanted, or in the
-  same "we don't bother" category as PAT/Gas Test currently is?)*
+  configuration pattern already used for Services etc. **Resolved (7 Aug
+  2026): "Stock Unit" is dropped as a Status value** — Andy agreed it's
+  really just what Placement's `location_type = 'Display'` already
+  tells us. Status stays scoped to genuine ownership/occupancy type
+  (Private/Rental/Residential-style values), not location — avoiding the
+  exact two-places-to-update problem CampManager has.
+- **Condition — resolved (7 Aug 2026): keep it, Tree Tops should
+  actually be using it.** One real wrinkle: a caravan stops being "New"
+  the moment it's sold for the first time, so something needs to update
+  Condition at that point rather than leaving it stale — Andy flagged
+  this needs some process thought, not just the field itself. Parking
+  the exact mechanism (auto-transition on first Ownership row vs a
+  manual step) as a Phase 2+ workflow question, not a Phase 1 data model
+  blocker.
+
+### Insurance (own entity, resolved 7 Aug 2026)
+
+Originally sketched as a handful of fields on Caravan; promoted to its
+**own entity** (`caravan_id, insurer, start_date, end_date,
+certificate_file`) once the real detail came out — closer in shape to
+Licence than to a couple of flat columns.
+
+- **Compass is the park's own introduced insurer** — Tree Tops doesn't
+  need to check Compass cover, it already meets the park's requirements
+  (no Insurance Check Fee applies here, consistent with the existing
+  rule that the fee only bites for independent insurers).
+- **Compass runs one shared annual cycle**: every Compass policy renews
+  **1 July**, ending **30 June** the following year — the same
+  1-July/30-June shape as Rates/Water/Refuse. Mid-year joiners on
+  Compass **pay pro-rata**, then renew with everyone else on the next 1
+  July — the same "prorate at join, then join the batch cycle" pattern
+  already seen for Pitch Fee and RWR.
+- **Independent (non-Compass) insurers keep their own dates** — not tied
+  to the 1 July cycle at all, genuinely different start/end per
+  customer. These are the ones the **£35+VAT Insurance Check Fee**
+  applies to (already established elsewhere in this brief), and Andy
+  needs to **always hold up-to-date cover** for them — another
+  "needs chasing" case like PAT/Gas Test and Licence signing, not just a
+  stored date.
+- **Certificate storage wanted**: "It would be great if we could hold a
+  scanned certificate" — Insurance needs a real file attachment, not
+  just a Yes/No or a date. Same kind of requirement as `job_photos` in
+  the Maintenance app (Supabase Storage), applied here to insurance
+  documents instead of job photos.
 
 ### Leads (separate from Customer)
 
