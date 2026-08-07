@@ -855,6 +855,43 @@ already got right.
   but keeps the pattern consistent across the app.
 - **Meters** — already modeled, own table.
 
+### Business, Park, Area — scoped 7 Aug 2026
+
+Grounded partly against the letterhead block on the same CampManager
+"Unit Summary" printout used for Caravan (name, address, phone, fax,
+web, VAT number) — not just guessed.
+
+**Business:**
+- `name`, `address`, `phone`, `email`
+- `vat_number`, `company_number` — **both Business and Park carry these,
+  deliberately.** Andy: some businesses incorporate each park as its own
+  limited company, others run everything under one group company — the
+  model needs to support either without assuming which, so both levels
+  get the fields rather than picking one.
+
+**Park:**
+- `name`, `address`, `phone`, `fax`, `web`
+- `vat_number`, `company_number` (see above)
+- `default_vat_rate` — already resolved elsewhere, stays Park-level
+  since an HMRC domestic-use agreement is granted per-site.
+- `bank_account_number`, `bank_sort_code` — Park-level, for whenever
+  invoicing needs bank details on a bill.
+- **Fax confirmed real but essentially dead** — "we have one, don't
+  remember the last time it worked." Kept as a field since it's genuine
+  letterhead data, not a live requirement.
+
+**Area:**
+- `name`, `park_id`, `season_id` (already established)
+
+**Deferred, not built now — Documents (letters, licence agreement
+templates, logos):** confirmed this belongs at **Park level, not
+Business**, once it's actually built — Andy: a company with parks on
+both UK mainland and Northern Ireland would need genuinely different
+agreements per park (different jurisdictions), and logos vary by park
+too, matching the earlier document-generation roadmap item. Not needed
+yet — noted here so the eventual Documents feature doesn't default to
+the wrong level.
+
 ### Leads (separate from Customer)
 
 Andy manages a sales pipeline — enquiry → visit → sale — for people who
