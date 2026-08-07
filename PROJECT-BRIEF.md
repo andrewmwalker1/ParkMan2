@@ -560,14 +560,19 @@ a future edge case (three people on one account, say) is just another
 row, not a schema change.
 
 **Provisional, not final (7 Aug 2026):** Andy's take — "feels a little
-over normalised" — is a fair concern to keep in mind, not dismiss. The
-real cost: ~194 of 200 current caravans have exactly one owner, so
-almost every read/write against Customer means joining two tables for
-the common case, in exchange for clean handling of the rare 5-6 multi-
-owner accounts. Going with the normalized version for now, but if it
-proves genuinely awkward once real screens are being built (rather than
-just modelled on paper), collapsing back toward something flatter is a
-legitimate revisit, not a failure of the design.
+over normalised" — is a fair concern to keep in mind, not dismiss.
+**Correction to the numbers above:** the dominant case is actually
+**two** people, not one — Andy: ~97% of the 200 caravans are bought by
+couples (Mr & Mrs), both landing in the Primary group. The genuinely
+rare thing (the 5-6, one of which reached three) is a person *beyond*
+the couple — e.g. an adult child added to the ownership, often for
+inheritance-tax reasons. That actually softens the over-normalization
+concern: CustomerPerson's "one row per person" shape already matches
+the *normal* case (2 rows) rather than being overhead paid for a rare
+one. Still going with the normalized version for now, and still
+genuinely open to collapsing back toward something flatter if it proves
+awkward once real screens are being built — just on a fairer premise
+than the wrong 194/1-owner assumption above.
 - **Correspondence Salutation** (free text) — how the customer is
   addressed in email/day-to-day correspondence, in their own words: could
   be a first name/nickname ("Andy" rather than "Andrew"), or a couple
