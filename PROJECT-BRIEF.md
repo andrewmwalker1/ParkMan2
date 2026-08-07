@@ -1,7 +1,8 @@
 # ParkMan2 — Project Briefing
 
-**Last updated:** 7 Aug 2026 — Rates/Water/Refuse calculation and
-proration resolved; still no code written
+**Last updated:** 7 Aug 2026 — Rates/Water/Refuse and Pitch Fee
+proration resolved, meter-reading validation and Join opening readings
+resolved; still no code written
 
 ## Who you're talking to
 
@@ -283,10 +284,12 @@ same walk. **ParkMan2 should replace this properly**, not just port it:
   date, end date, and number of days between** the two readings a
   charge covers, not just the total.
 - **Lower-than-previous readings can be legitimate** (meter replaced or
-  rolled over) — not always an error. *(Open: confirm whether this
-  should flag-and-block pending manual override, or just flag for
-  review — leaning toward the latter given it's a real, if
-  infrequent, occurrence.)*
+  rolled over) — not always an error, but **resolved (7 Aug 2026): block
+  it** rather than just flag it. A lower reading could be a genuine
+  meter rollover, but could equally be a misread or a wrong reading
+  recorded previously — either way it needs a human to look at it and
+  manually confirm/override before that Reading Round can be committed,
+  rather than being allowed through with just a warning.
 
 **Reading Rounds happen for three different reasons, not just one
 schedule:**
@@ -305,9 +308,13 @@ schedule:**
    an Ownership row and generates a final bill. A **Move** closes the
    Placement on the old pitch (final reading + bill for that pitch) and
    opens a new Placement on the new pitch with an **opening reading**
-   recorded but no bill yet, since nothing's been consumed there. A
-   **Join** likely needs an opening reading too, to give future billing
-   a genuine starting point. *(Open: confirm this for Join.)*
+   recorded but no bill yet, since nothing's been consumed there.
+   **Resolved (7 Aug 2026): a Join needs one too**, same as Move — a
+   real opening reading, not a zero/blank starting point, to give future
+   billing a genuine baseline. **A small gap between the previous
+   occupant's closing reading and the new opening reading is normal, not
+   an error to reconcile** — e.g. gas/electric used cleaning the caravan
+   between occupants. The two readings aren't expected to match exactly.
 
 **Rate structure:** flat cost per unit, no standing charge currently
 (Tree Tops used to have a per-day "availability charge," calculated
@@ -346,6 +353,12 @@ system.
   get an individual invoice created at the point they join, pro-rated
   to the end of the current pitch-fee year (end of February), then join
   the normal January batch run like everyone else from then on.
+  **Resolved (7 Aug 2026): that proration is whole-months, not
+  day-based** — same shape as the Rates/Water/Refuse proration above,
+  for consistency. (In practice this pro-rata figure is often folded
+  into the caravan sale price rather than billed as its own line — see
+  the discretionary new-joiner billing note further below — but when it
+  *is* billed directly, whole-months is the rule.)
 - **Utilities** — the two scheduled rounds above (summer, post-closing),
   plus ad-hoc runs whenever a rate change or a Leave/Move forces one.
 - **Delivery** — mostly email, but some customers require a paper copy
@@ -534,10 +547,6 @@ Phase 1 or 2 — noted here so the roadmap accounts for it.
 
 ## Open questions / not yet decided
 
-- Billing calculation rules for **Pitch Fees and Utilities** — how these
-  actually get calculated in practice. (Rates/Water/Refuse is resolved:
-  the system never calculates it, only holds the accountant's supplied
-  figure — see that section above.)
 - Whether Ownership/Placement history is needed in full from Phase 1,
   or whether a simpler current-state-only version ships first with
   history added later — a build-sequencing question, not a modelling
