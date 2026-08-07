@@ -594,6 +594,114 @@ Fields:
   ParkMan2 needs to replicate since each Business already gets its own
   separate database (see Roadmap above). A normal internal ID is enough.
 
+### Season (new concept, 7 Aug 2026 — solves a real CampManager pain point)
+
+Grew out of scoping Caravan against a real CampManager "Unit Summary"
+printout, which showed each caravan carrying its own **Site Fee
+Start/Expiry** dates directly. Andy: "there's no easy way to update the
+whole park when billing" — every unit's dates have to be touched
+individually each year. ParkMan2 replaces that with one small lookup
+table so a whole park (or whichever Areas share a season) updates from a
+single place.
+
+- **Season** (`name, start_date, end_date`) — e.g. Tree Tops runs two
+  active Seasons at once, not one park-wide constant: the **"9 Month
+  Season"** (1 March – 7 December, most of the park) and the **"10.5
+  Month Season"** (1 Feb – 15 December, the Orchard specifically).
+- **Area gains a `season_id`** — each Area is assigned whichever Season
+  it actually follows.
+- A caravan's "site fee expiry" (what CampManager stores per-unit) is
+  then **derived** from the current Season's end date for whatever Area
+  its Pitch sits in, not stored per Caravan/Ownership at all. Updating a
+  Season's dates for a new year updates every caravan under it in one
+  move — this is the actual fix for the CampManager pain point.
+- *(Open: do Season dates ever genuinely change year to year at Tree
+  Tops, or is the month/day pattern effectively permanent once set? If
+  they never change, Season doesn't need year-versioning; if they can
+  shift, it needs the same kind of `year` column PitchBandRate has.)*
+
+### Licence (new entity, 7 Aug 2026)
+
+Andy: "the licence ties together the customer, the pitch and the
+caravan for a period of time" — a genuine three-way link that doesn't
+fit cleanly as a property of Ownership (Customer+Caravan only) or
+Placement (Caravan+Pitch only) alone. Proposed as its own **Licence**
+entity: `customer_id, caravan_id, pitch_id, term_type, start_date,
+end_date`.
+
+- **Term remaining** is wanted as a display, computed live from
+  `end_date` (not stored) — the same treatment CampManager gives
+  "Licence Duration" on the unit printout.
+- **Two term types, not one:** most licences are **fixed-term**, but
+  valued customers are sometimes offered an **annual** agreement once
+  their fixed term ends — a retention gesture, at Andy's discretion,
+  matching the same case-by-case pattern already seen elsewhere in
+  billing.
+- **Default term length depends on Caravan Type** — new standard
+  caravans are generally granted **20-year** agreements, Lodges
+  **30-year** — a sensible pre-filled suggestion when creating a
+  Licence, not an enforced rule (same "suggest, staff can override"
+  pattern as Reading Round rate defaults elsewhere in this brief).
+- *(Open: how does an **annual** licence actually renew in practice —
+  does staff create a fresh one-year Licence row each year, or does an
+  existing row's `end_date` just get pushed forward? And does a Licence
+  survive a caravan **Move** to a different pitch within the park, get
+  closed and a new one opened, or something else?)*
+
+### Caravan entity — scoped 7 Aug 2026
+
+Grounded against the same real CampManager "Unit Summary" printout.
+
+- **Make, Model, Year, Colour, Serial Number** — straightforward, all
+  confirmed real fields.
+- **Length, Width, Bedrooms, Berths** — all real size fields. Bedroom
+  count alone doesn't tell you sleeping capacity: a 2-bed sleeps 6 with
+  a lounge pull-out sofa bed, 4 without; a 3-bed sleeps 8 with one. Andy
+  wants **both** Bedrooms and Berths captured — Berths entered directly
+  per unit rather than derived from Bedrooms, since it depends on
+  whether that specific unit actually has a pull-out.
+- **Type** (e.g. Static Home vs Lodge) — real field; also drives the
+  Licence default-term suggestion above.
+- **No separate "Registration" field.** What the CampManager printout
+  showed as `Registration: WIFI` turned out to be a repurposed, unused
+  field staff hijacked to flag WiFi presence — the same kind of
+  workaround as the old Sky "& Band" issue already noted elsewhere in
+  this brief. ParkMan2 already has a proper home for WiFi (the
+  `follows: caravan` Service/PitchService mechanism), so this field
+  isn't needed at all, repurposed or otherwise.
+- **Band/Category stays on Pitch, not Caravan.** CampManager stores the
+  pitch-fee Band directly on the Unit because it has no real concept of
+  a Pitch as its own entity at all (confirmed by Andy). ParkMan2 does
+  model Pitch as first-class, so the already-reasoned decision (Band
+  lives on Pitch, changes only when a caravan physically moves) stands —
+  Andy's fine either way, so no reason to move away from it.
+- **PAT Test Expiry, Gas Test Expiry** — real, important safety-
+  compliance fields. Andy: "we should be using these but the system is
+  clunky so we don't bother" — a signal ParkMan2 should make these
+  genuinely easy to act on (e.g. a simple upcoming-expiries view) rather
+  than store-and-forget the dates the way CampManager effectively does
+  today. Worth keeping in mind for later, not a Phase 1 build detail.
+- **Key Number** — confirmed critical, not just a nice-to-have.
+  **Searching Caravans by Key Number needs to work** — a real day-to-day
+  staff task, not just a stored field.
+- **Status** — a real concept (CampManager: Private / Rental /
+  Residential / Stock Unit), but Andy flags CampManager's version as
+  clunky enough that staff don't reliably keep it current (e.g.
+  forgetting to mark a unit "Stock Unit" when it goes up for sale).
+  **Resolved: make this a data-driven lookup, not a fixed set** — so it
+  can vary per Business (Andy's example: "some parks might have staff
+  units") rather than being hardcoded, the same per-Business-
+  configuration pattern already used for Services etc. *(Open: does
+  "Stock Unit" duplicate what Placement's `location_type = 'Display'`
+  already tells us — i.e. is Status really only about ownership/occupancy
+  type (Private/Rental/Residential), with "for sale" purely a Placement
+  fact rather than a Status value at all? Worth resolving so ParkMan2
+  doesn't inherit the exact two-places-to-update problem CampManager
+  has.)*
+- **Condition** ("New" seen on the printout) — real field? *(Open: what
+  are the other values, and is this genuinely used/wanted, or in the
+  same "we don't bother" category as PAT/Gas Test currently is?)*
+
 ### Leads (separate from Customer)
 
 Andy manages a sales pipeline — enquiry → visit → sale — for people who
