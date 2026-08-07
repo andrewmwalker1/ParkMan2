@@ -512,6 +512,55 @@ Real operational requirements, not just data model:
   blocker for Phase 2 being usable — export + manual re-entry works as
   a fallback if import doesn't make the first cut.
 
+### Customer entity — scoped 7 Aug 2026
+
+A Customer record is an **account that can hold up to two named people**,
+not one person per row — this is how joint ownership (e.g. two sisters and
+their husbands owning a caravan together) gets handled, rather than
+multiple Ownership rows or a multi-customer link table. `Ownership`
+(`caravan_id, customer_id, ...`) still references exactly **one** Customer
+row either way — this resolves the earlier open question about whether
+Ownership needs more than one `customer_id`; it doesn't, because "two
+people" lives inside the Customer record itself.
+
+Fields:
+- **Customer 1** (always present): Title, First Name, Surname, Phone,
+  Email, and a **"receives billing/correspondence"** flag.
+- **Customer 2** (optional — may not exist): same shape as Customer 1 —
+  Title, First Name, Surname, Phone, Email, and its own
+  "receives billing/correspondence" flag. The flag on each matters
+  because either, both, or neither combination is possible — e.g. only
+  Customer 1's email actually gets bills even though Customer 2 is a
+  named owner too.
+- **Correspondence Salutation** (free text) — how the customer is
+  addressed in email/day-to-day correspondence, in their own words: could
+  be a first name/nickname ("Andy" rather than "Andrew"), or a couple
+  ("John and Jane"), or formal ("Mr & Mrs Smith"). Not derived from
+  Title/First/Surname — entered as its own field because how someone
+  wants to be addressed doesn't reliably follow from their legal name.
+- **Address Salutation** (free text) — the letter/label form, e.g.
+  "Mr & Mrs J Smith". Same reasoning: not derived, entered directly.
+- **Address** — one shared address for the whole Customer account (not
+  per Customer 1/2).
+- **Delivery preference** — email or paper, **defaults to email**. One
+  account-level setting (how bills go out), separate from the per-person
+  billing flags above (which of Customer 1/2's emails actually receive
+  it, when the method is email).
+- **No relationship field between Customer 1 and Customer 2** — explicitly
+  not needed; they're just the two people on the account, nothing about
+  billing or correspondence depends on knowing *how* they're related to
+  each other. (This is separate from the **Family Member** concept used
+  for the Transfer Fee waiver in the Purchase & Licence Agreement section
+  above, which is about the relationship between an *outgoing* and
+  *incoming* owner at a resale, not between Customer 1 and 2 on the same
+  account — that remains a separate, still-open Phase 2 billing question.)
+- **Next of Kin** — up to **two** entries, each just: Name, Relationship
+  (free text, e.g. "Son"), Contact number. Entirely separate from Customer
+  1/2 — an emergency-contact concept, not a billing one.
+- **Notes** — a single free-text field for the whole Customer account, not
+  one per sub-customer (deliberately, to avoid the confusion of "which
+  person's notes is this").
+
 ### Leads (separate from Customer)
 
 Andy manages a sales pipeline — enquiry → visit → sale — for people who
