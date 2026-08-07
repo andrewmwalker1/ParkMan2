@@ -523,32 +523,32 @@ Real operational requirements, not just data model:
 
 ### Customer entity — scoped 7 Aug 2026
 
-A Customer record is an **account that can hold up to two named people**,
-not one person per row — this is how joint ownership (e.g. two sisters and
-their husbands owning a caravan together) gets handled, rather than
-multiple Ownership rows or a multi-customer link table. `Ownership`
-(`caravan_id, customer_id, ...`) still references exactly **one** Customer
-row either way — this resolves the earlier open question about whether
-Ownership needs more than one `customer_id`; it doesn't, because "two
-people" lives inside the Customer record itself.
+A Customer record is an **account with two levels, corrected 7 Aug
+2026** — a **Primary Customer** (required) and an optional **Secondary
+Customer**, and *each of those* can itself hold **one or two named
+people**. So the "two sisters and their husbands" scenario is **four**
+person-slots, not two: Primary Customer = sister 1 + her husband,
+Secondary Customer = sister 2 + her husband. (An earlier pass at this
+brief flattened Primary/Secondary down to a single pair of people —
+wrong; corrected here.) `Ownership` (`caravan_id, customer_id, ...`)
+still references exactly **one** Customer row regardless of how many of
+the four person-slots are filled — "up to four people" all lives inside
+the one Customer record, not extra Ownership rows.
 
-Fields:
-- **Customer 1 is the Primary Contact, Customer 2 the Secondary
-  Contact** — renamed/clarified 7 Aug 2026 so the slots carry their
-  actual meaning rather than an arbitrary "1 vs 2" label. Andy's
-  example: a family buys together, the parents are the Primary Contact
-  and generally pay the bills, their kids are the Secondary Contact.
-  "Generally" is doing real work in that sentence — it's not an absolute
-  rule, which is exactly why the per-person billing flag below still
-  exists independently of who's Primary vs Secondary.
-- **Primary Contact** (always present): Title, First Name, Surname,
-  Phone, Email, and a **"receives billing/correspondence"** flag.
-- **Secondary Contact** (optional — may not exist): same shape as
-  Primary — Title, First Name, Surname, Phone, Email, and its own
+Fields — Primary Customer and Secondary Customer are each structured
+identically:
+- **Customer 1** (required within a filled-in Primary or Secondary
+  Customer): Title, First Name, Surname, Phone, Email, and a
+  **"receives billing/correspondence"** flag.
+- **Customer 2** (optional within either): same shape as Customer 1 —
+  Title, First Name, Surname, Phone, Email, and its own
   "receives billing/correspondence" flag. The flag on each matters
-  because either, both, or neither combination is possible — e.g. only
-  the Primary Contact's email actually gets bills even though the
-  Secondary Contact is a named owner too.
+  because any combination of the (up to four) people can be the one(s)
+  who actually get bills — e.g. only Primary Customer 1's email gets
+  bills even though three other named people are on the account.
+- **Secondary Customer as a whole is optional** — often there's no
+  second couple/person at all, just one Primary Customer (who may
+  themselves be one or two people).
 - **Correspondence Salutation** (free text) — how the customer is
   addressed in email/day-to-day correspondence, in their own words: could
   be a first name/nickname ("Andy" rather than "Andrew"), or a couple
@@ -558,7 +558,7 @@ Fields:
 - **Address Salutation** (free text) — the letter/label form, e.g.
   "Mr & Mrs J Smith". Same reasoning: not derived, entered directly.
 - **Address** — one shared address for the whole Customer account (not
-  per Primary/Secondary Contact). **Resolved (7 Aug 2026): structured to mirror
+  per person, and not per Primary/Secondary Customer). **Resolved (7 Aug 2026): structured to mirror
   CampManager's own shape** (Address text block, County, Province,
   Language) rather than inventing a fresh layout — deliberately, so
   that importing existing CampManager customer data into ParkMan2 later
@@ -568,20 +568,20 @@ Fields:
   reason, not because Tree Tops itself needs them.
 - **Delivery preference** — email or paper, **defaults to email**. One
   account-level setting (how bills go out), separate from the per-person
-  billing flags above (which of the Primary/Secondary Contact's emails
+  billing flags above (which of the (up to four) people's emails
   actually receive it, when the method is email).
-- **No relationship field between Primary and Secondary Contact** —
-  explicitly not needed; they're just the two people on the account,
-  nothing about billing or correspondence depends on knowing *how*
-  they're related to each other. (This is separate from the **Family
-  Member** concept used for the Transfer Fee waiver in the Purchase &
-  Licence Agreement section above, which is about the relationship
-  between an *outgoing* and *incoming* owner at a resale, not between
-  the two contacts on the same account — that remains a separate,
+- **No relationship field between any of the four person-slots** —
+  explicitly not needed; nothing about billing or correspondence depends
+  on knowing *how* they're related to each other. (This is separate from
+  the **Family Member** concept used for the Transfer Fee waiver in the
+  Purchase & Licence Agreement section above, which is about the
+  relationship between an *outgoing* and *incoming* owner at a resale,
+  not between people on the same account — that remains a separate,
   still-open Phase 2 billing question.)
 - **Next of Kin** — up to **two** entries, each just: Name, Relationship
-  (free text, e.g. "Son"), Contact number. Entirely separate from Customer
-  1/2 — an emergency-contact concept, not a billing one.
+  (free text, e.g. "Son"), Contact number. Entirely separate from the
+  four Primary/Secondary person-slots — an emergency-contact concept,
+  not a billing one.
 - **Notes** — one shared history for the whole Customer account, not one
   per sub-customer (deliberately, to avoid the confusion of "which
   person's notes is this"). **Resolved (7 Aug 2026): an append-only
