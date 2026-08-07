@@ -523,32 +523,32 @@ Real operational requirements, not just data model:
 
 ### Customer entity — scoped 7 Aug 2026
 
-A Customer record is an **account with two levels, corrected 7 Aug
-2026** — a **Primary Customer** (required) and an optional **Secondary
-Customer**, and *each of those* can itself hold **one or two named
-people**. So the "two sisters and their husbands" scenario is **four**
-person-slots, not two: Primary Customer = sister 1 + her husband,
-Secondary Customer = sister 2 + her husband. (An earlier pass at this
-brief flattened Primary/Secondary down to a single pair of people —
-wrong; corrected here.) `Ownership` (`caravan_id, customer_id, ...`)
-still references exactly **one** Customer row regardless of how many of
-the four person-slots are filled — "up to four people" all lives inside
-the one Customer record, not extra Ownership rows.
+A Customer is modelled as **two tables, not one — corrected 7 Aug
+2026 after Andy questioned the first flattened attempt**:
+- **CustomerAccount** — the shared "household" record: one Address, one
+  set of salutations, one Delivery preference, etc. `Ownership`
+  (`caravan_id, customer_account_id, ...`) references exactly **one**
+  CustomerAccount, regardless of how many people are named on it.
+- **CustomerPerson** (`customer_account_id, is_primary_group,
+  title, first_name, surname, phone, email, receives_billing`) — one row
+  **per actual named person**, not fixed Customer-1/Customer-2 columns.
+  `is_primary_group` (boolean) says whether this person belongs to the
+  Primary or Secondary Customer; there's no meaningful ordering *within*
+  a group beyond who was entered first, so no separate "slot number" is
+  needed. The "two sisters and their husbands" case is simply **four
+  CustomerPerson rows** against one CustomerAccount — two with
+  `is_primary_group = true`, two with `false`.
 
-Fields — Primary Customer and Secondary Customer are each structured
-identically:
-- **Customer 1** (required within a filled-in Primary or Secondary
-  Customer): Title, First Name, Surname, Phone, Email, and a
-  **"receives billing/correspondence"** flag.
-- **Customer 2** (optional within either): same shape as Customer 1 —
-  Title, First Name, Surname, Phone, Email, and its own
-  "receives billing/correspondence" flag. The flag on each matters
-  because any combination of the (up to four) people can be the one(s)
-  who actually get bills — e.g. only Primary Customer 1's email gets
-  bills even though three other named people are on the account.
-- **Secondary Customer as a whole is optional** — often there's no
-  second couple/person at all, just one Primary Customer (who may
-  themselves be one or two people).
+**Why the redo:** the first pass flattened this into
+`primary_customer1_*` / `primary_customer2_*` / `secondary_customer1_*`
+/ `secondary_customer2_*` columns on one row — directly mirroring how
+the fields were *described* (a form with fixed slots) rather than
+normalizing it. That's worse for exactly the thing Andy flagged —
+reporting. "List every phone number on file" or "how many accounts have
+a second person" needs one straightforward query against CustomerPerson
+now, instead of checking four different sets of columns. It also means
+a future edge case (three people on one account, say) is just another
+row, not a schema change.
 - **Correspondence Salutation** (free text) — how the customer is
   addressed in email/day-to-day correspondence, in their own words: could
   be a first name/nickname ("Andy" rather than "Andrew"), or a couple
@@ -567,21 +567,21 @@ identically:
   North-Wales park, but are kept for that same import-compatibility
   reason, not because Tree Tops itself needs them.
 - **Delivery preference** — email or paper, **defaults to email**. One
-  account-level setting (how bills go out), separate from the per-person
-  billing flags above (which of the (up to four) people's emails
+  CustomerAccount-level setting (how bills go out), separate from each
+  CustomerPerson's own `receives_billing` flag (which of their emails
   actually receive it, when the method is email).
-- **No relationship field between any of the four person-slots** —
-  explicitly not needed; nothing about billing or correspondence depends
-  on knowing *how* they're related to each other. (This is separate from
-  the **Family Member** concept used for the Transfer Fee waiver in the
+- **No relationship field between CustomerPerson rows** — explicitly not
+  needed; nothing about billing or correspondence depends on knowing
+  *how* they're related to each other. (This is separate from the
+  **Family Member** concept used for the Transfer Fee waiver in the
   Purchase & Licence Agreement section above, which is about the
   relationship between an *outgoing* and *incoming* owner at a resale,
   not between people on the same account — that remains a separate,
   still-open Phase 2 billing question.)
 - **Next of Kin** — up to **two** entries, each just: Name, Relationship
-  (free text, e.g. "Son"), Contact number. Entirely separate from the
-  four Primary/Secondary person-slots — an emergency-contact concept,
-  not a billing one.
+  (free text, e.g. "Son"), Contact number. Lives on CustomerAccount, not
+  CustomerPerson — an emergency-contact concept for the household, not
+  tied to any one named person or to billing.
 - **Notes** — one shared history for the whole Customer account, not one
   per sub-customer (deliberately, to avoid the confusion of "which
   person's notes is this"). **Resolved (7 Aug 2026): an append-only
