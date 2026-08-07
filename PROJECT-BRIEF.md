@@ -693,9 +693,14 @@ end_date`.
   shape as the PAT/Gas Test "needs chasing" problem elsewhere in this
   brief — an upcoming/overdue view will matter here too, not just the
   raw field.
-- *(Open: does a Licence survive a caravan **Move** to a different pitch
-  within the park, or does it get closed and a new one opened against
-  the new `pitch_id`? Not yet addressed.)*
+- **Resolved (7 Aug 2026): a Move closes the Licence and opens a new
+  one.** Andy: "a new licence would be needed to tie together the
+  customer, pitch and caravan" — since Licence is a three-way link
+  including `pitch_id`, a pitch change genuinely means a new agreement,
+  not an edit to the existing one. Ties directly to the Move event
+  already defined under Reading Rounds above (closes the old Placement,
+  opens a new one) — Licence closure/reopening happens alongside that,
+  not as a separate unrelated step.
 
 ### Caravan entity — scoped 7 Aug 2026
 
