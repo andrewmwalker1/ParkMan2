@@ -132,15 +132,24 @@ Confirmed so far (Andy's own description, 6 Aug 2026):
     record (old row's `end_date` set); a replaced caravan is a brand
     new Caravan record with its own Ownership rows. Current owner is
     the row with no `end_date`.
-  - **Placement** (`caravan_id, location_type, pitch_id` [nullable],
-    `start_date, end_date`) — `location_type` is one of Pitch /
-    Storage / Display (sale area) / Off-park. Covers pitch moves,
-    storage gaps between owners, and caravans on display before being
-    sited. Pitch fee billing only applies while a Placement has
-    `location_type = 'pitch'` and is current. "What's currently on this
-    pitch" is derived from the open Placement row, not a `caravan_id`
-    column on Pitch — one source of truth instead of two things that
-    could disagree.
+  - **Placement** (`caravan_id, pitch_id` [nullable], `start_date,
+    end_date`) — **refined 7 Aug 2026, replacing the earlier
+    `location_type` enum**: Storage and Display (sale area) turned out
+    to be genuine physical locations with their own capacity, not just
+    status labels — see the new Pitch `type`/`capacity` fields below —
+    so they're now modeled as Pitch rows themselves (`type = 'Storage'`
+    / `'Display'`) rather than a separate enum value on Placement.
+    `pitch_id` being **null** is now the one and only way to represent
+    **Off-park** (caravan genuinely not on site, e.g. at a dealer).
+    Covers pitch moves, storage gaps between owners, and caravans on
+    display before being sited. Pitch fee billing only applies while a
+    Placement's Pitch has a "live pitch" `type` (e.g. Caravan/Lodge, not
+    Storage/Display) and is current. "What's currently on this pitch" is
+    derived from the open Placement row, not a `caravan_id` column on
+    Pitch — one source of truth instead of two things that could
+    disagree. *(Flagging this as a restructure of already-written model
+    text, not just an addition — worth double-checking this matches what
+    you meant.)*
   - A Customer having zero current Ownership rows covers both a
     prospective customer and a former customer who has left.
 
@@ -761,6 +770,54 @@ Licence than to a couple of flat columns.
   just a Yes/No or a date. Same kind of requirement as `job_photos` in
   the Maintenance app (Supabase Storage), applied here to insurance
   documents instead of job photos.
+
+### Pitch entity — scoped 7 Aug 2026
+
+No CampManager equivalent to check this against — Andy confirmed
+CampManager doesn't really model Pitch as its own thing at all, so this
+one's scoped from scratch plus what ParkMan (the original VB6 system)
+already got right.
+
+- **Number** (display text, e.g. `A1`) and **Sort Key** (e.g. `A01`) are
+  **two separate fields**, restoring a real ParkMan behavior CampManager
+  broke. ParkMan showed pitches as `OP-A1` but sorted internally on a
+  zero-padded `OP-A01` so ordering came out right (`A1, A2, ...A10`, not
+  `A1, A10, A2`); CampManager forced the padded form to be the *visible*
+  number too, which Andy found genuinely annoying. Sort Key can be
+  auto-suggested from Number and rarely needs manual editing — Andy
+  confirmed simple alphanumeric sort order is all the park actually
+  needs (no separate manual drag-order field required, since the park
+  is "reasonably well ordered" already).
+- **Area, Band** — already modeled (`area_id`, `pitch_band_id`).
+- **Type** (data-driven lookup, e.g. Caravan / Lodge / Storage / Display)
+  — deliberately not hardcoded, so a future new unit type (or another
+  park running glamping pods on this system) doesn't need a schema
+  change. Confirmed **no bearing on RWR** (RWR doesn't vary by pitch
+  type, already resolved elsewhere). Storage and Display are Pitch
+  *types* now, not a separate concept — see the Placement refinement
+  above.
+- **Capacity** (number) — how many caravans/units a Pitch can hold at
+  once. Normally **1** for a live Caravan/Lodge pitch, but genuinely
+  more than 1 for a Storage yard or a Display/sales area, which is
+  exactly why Storage/Display needed to become real Pitch rows rather
+  than a Placement-only label — a single "current occupant" concept
+  doesn't fit a location that holds several caravans at once.
+- **Length, Width** — real fields, but explicitly **indicative, not
+  enforced**. Andy: a 34' caravan sometimes goes on a 35' pitch, and a
+  36' caravan can sometimes be squeezed onto a 35' plot — these are a
+  planning guide, not a validation rule that should ever block placing
+  a caravan.
+- **Status** (data-driven lookup, e.g. Active / Out of Use) — real need
+  confirmed: "3 or 4 pitches ... out of use for various reasons" at any
+  time, independent of whether a caravan happens to be placed there.
+- **Notes** — Andy raised this as an open question rather than a
+  decision. Recommendation: yes, worth having, and for consistency with
+  the Customer notes decision above, the same append-only dated-log
+  shape (not a single free-text field) — e.g. to record *why* a pitch
+  went out of use, or other physical quirks specific to that plot. Low
+  volume compared to Customer notes, so the extra structure costs little
+  but keeps the pattern consistent across the app.
+- **Meters** — already modeled, own table.
 
 ### Leads (separate from Customer)
 
