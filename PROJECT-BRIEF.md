@@ -870,7 +870,8 @@ web, VAT number) — not just guessed.
   get the fields rather than picking one.
 
 **Park:**
-- `name`, `address`, `phone`, `fax`, `web`
+- `name`, `address`, `phone`, `fax`, `web`, `email` — real example, Tree
+  Tops' is `info@treetopscaravanpark.co.uk`
 - `vat_number`, `company_number` (see above)
 - `default_vat_rate` — already resolved elsewhere, stays Park-level
   since an HMRC domestic-use agreement is granted per-site.
