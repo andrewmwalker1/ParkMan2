@@ -538,6 +538,15 @@ A Customer is modelled as **two tables, not one — corrected 7 Aug
   needed. The "two sisters and their husbands" case is simply **four
   CustomerPerson rows** against one CustomerAccount — two with
   `is_primary_group = true`, two with `false`.
+  **Real frequency, per Andy (7 Aug 2026):** out of ~200 caravans, maybe
+  5-6 accounts have a second owner, and one has had **three** — still
+  fits the model as-is (three CustomerPerson rows split across the two
+  groups, e.g. two Primary + one Secondary, no schema change needed).
+  Andy suspects inheritance-tax planning is often the driver, and notes
+  other parks actively target the multigenerational-ownership market —
+  worth remembering as more than a hypothetical edge case if ParkMan2
+  ever needs to support that better (e.g. a future onboarding flow
+  aimed at multi-generation buyers).
 
 **Why the redo:** the first pass flattened this into
 `primary_customer1_*` / `primary_customer2_*` / `secondary_customer1_*`
