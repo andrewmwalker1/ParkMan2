@@ -127,11 +127,13 @@ Confirmed so far (Andy's own description, 6 Aug 2026):
 - **Caravan is its own entity**, not owned inline by a Customer or fixed
   to a Pitch — because ownership and location both change over time and
   need history, not just a current-state column:
-  - **Ownership** (`caravan_id, customer_id, start_date, end_date`) —
-    a resold caravan is a new Ownership row on the *same* Caravan
-    record (old row's `end_date` set); a replaced caravan is a brand
-    new Caravan record with its own Ownership rows. Current owner is
-    the row with no `end_date`.
+  - **Ownership** (`caravan_id, primary_customer_id,
+    secondary_customer_id` [nullable], `start_date, end_date`) —
+    **updated 7 Aug 2026, see the Customer entity section below for the
+    full reasoning**: a resold caravan is a new Ownership row on the
+    *same* Caravan record (old row's `end_date` set); a replaced caravan
+    is a brand new Caravan record with its own Ownership rows. Current
+    owner is the row with no `end_date`.
   - **Placement** (`caravan_id, pitch_id` [nullable], `start_date,
     end_date`) — **refined 7 Aug 2026, replacing the earlier
     `location_type` enum**: Storage and Display (sale area) turned out
@@ -521,120 +523,104 @@ Real operational requirements, not just data model:
   blocker for Phase 2 being usable — export + manual re-entry works as
   a fallback if import doesn't make the first cut.
 
-### Customer entity — scoped 7 Aug 2026
+### Customer entity — scoped 7 Aug 2026 (settled after a few iterations)
 
-A Customer is modelled as **two tables, not one — corrected 7 Aug
-2026 after Andy questioned the first flattened attempt**:
-- **CustomerAccount** — the shared "household" record: one Address, one
-  set of salutations, one Delivery preference, etc. `Ownership`
-  (`caravan_id, customer_account_id, ...`) references exactly **one**
-  CustomerAccount, regardless of how many people are named on it.
-- **CustomerPerson** (`customer_account_id, is_primary_group,
-  title, first_name, surname, phone, email, receives_billing`) — one row
-  **per actual named person**, not fixed Customer-1/Customer-2 columns.
-  `is_primary_group` (boolean) says whether this person belongs to the
-  Primary or Secondary Customer; there's no meaningful ordering *within*
-  a group beyond who was entered first, so no separate "slot number" is
-  needed. The "two sisters and their husbands" case is simply **four
-  CustomerPerson rows** against one CustomerAccount — two with
-  `is_primary_group = true`, two with `false`.
-  **Real frequency, per Andy (7 Aug 2026):** out of ~200 caravans, maybe
-  5-6 accounts have a second owner, and one has had **three** — still
-  fits the model as-is (three CustomerPerson rows split across the two
-  groups, e.g. two Primary + one Secondary, no schema change needed).
+**Customer represents one household — a couple, or a single person —
+capped at exactly two named people**, same bounded shape as Next of Kin
+below. "Primary vs Secondary" is **not** a property of a Customer row at
+all; it's decided per Ownership (see below), which is what lets the same
+household be Primary on one caravan and Secondary on another.
+
+Real scenarios that shaped this (Andy, 7 Aug 2026):
+- **Most caravans**: a married couple at one shared address — one
+  Customer row, both slots filled.
+- **A small number**: two couples own together, one nominated primary,
+  **living at different addresses** — this is *why* a Customer can't
+  just be one flattened "account" record covering everyone; it's two
+  separate Customer rows (each with its own address), linked together
+  by the Ownership row rather than by sharing one address field.
+- **Also small**: parents buy a caravan and add their grown-up kids to
+  the licence agreement, parents as primary, again at different
+  addresses — same shape as the two-couples case.
+- **Real frequency**: out of ~200 caravans, ~97% are exactly the
+  one-couple case; 5-6 have a second Customer involved, one of those
+  reaching three people total (two on one side, one on the other).
   Andy suspects inheritance-tax planning is often the driver, and notes
   other parks actively target the multigenerational-ownership market —
-  worth remembering as more than a hypothetical edge case if ParkMan2
-  ever needs to support that better (e.g. a future onboarding flow
-  aimed at multi-generation buyers).
+  worth remembering as more than a hypothetical edge case later (e.g. a
+  future onboarding flow aimed at multi-generation buyers).
 
-**Why the redo:** the first pass flattened this into
-`primary_customer1_*` / `primary_customer2_*` / `secondary_customer1_*`
-/ `secondary_customer2_*` columns on one row — directly mirroring how
-the fields were *described* (a form with fixed slots) rather than
-normalizing it. That's worse for exactly the thing Andy flagged —
-reporting. "List every phone number on file" or "how many accounts have
-a second person" needs one straightforward query against CustomerPerson
-now, instead of checking four different sets of columns. It also means
-a future edge case (three people on one account, say) is just another
-row, not a schema change.
+**Design history, briefly**: this went through three shapes in one
+session — flattened Customer-1/2 fields on one account row → normalized
+into separate Account/Person tables after Andy flagged the flattened
+version wasn't reporting-friendly → back to flattened Customer-1/2
+fields once the *real* problem turned out to be that Address was scoped
+to the wrong level (the whole multi-household account) rather than too
+few tables. Worth remembering if this feels like it's flip-flopped: it
+converged because each round surfaced a genuinely different requirement,
+not indecision for its own sake.
 
-**Provisional, not final (7 Aug 2026):** Andy's take — "feels a little
-over normalised" — is a fair concern to keep in mind, not dismiss.
-**Correction to the numbers above:** the dominant case is actually
-**two** people, not one — Andy: ~97% of the 200 caravans are bought by
-couples (Mr & Mrs), both landing in the Primary group. The genuinely
-rare thing (the 5-6, one of which reached three) is a person *beyond*
-the couple — e.g. an adult child added to the ownership, often for
-inheritance-tax reasons. That actually softens the over-normalization
-concern: CustomerPerson's "one row per person" shape already matches
-the *normal* case (2 rows) rather than being overhead paid for a rare
-one. Still going with the normalized version for now, and still
-genuinely open to collapsing back toward something flatter if it proves
-awkward once real screens are being built — just on a fairer premise
-than the wrong 194/1-owner assumption above.
-- **Correspondence Salutation** (free text) — how the customer is
-  addressed in email/day-to-day correspondence, in their own words: could
-  be a first name/nickname ("Andy" rather than "Andrew"), or a couple
+Fields on **Customer**:
+- **Customer 1** (required): Title, First Name, Surname, Phone, Email,
+  and a **"receives billing/correspondence"** flag.
+- **Customer 2** (optional — may not exist): same shape as Customer 1,
+  including its own billing flag — either, both, or neither of the two
+  can be the one(s) who actually get bills.
+- **No relationship field between Customer 1 and 2** — not needed;
+  nothing about billing or correspondence depends on *how* they're
+  related. (Separate from the **Family Member** concept used for the
+  Transfer Fee waiver elsewhere in this brief, which is about the
+  relationship between an *outgoing* and *incoming* owner at a resale —
+  a different, still-open Phase 2 billing question.)
+- **Correspondence Salutation** (free text) — how the household is
+  addressed in email/day-to-day correspondence, in their own words:
+  could be a first name/nickname ("Andy" rather than "Andrew"), a couple
   ("John and Jane"), or formal ("Mr & Mrs Smith"). Not derived from
   Title/First/Surname — entered as its own field because how someone
   wants to be addressed doesn't reliably follow from their legal name.
 - **Address Salutation** (free text) — the letter/label form, e.g.
   "Mr & Mrs J Smith". Same reasoning: not derived, entered directly.
-- **Address** — one shared address for the whole Customer account (not
-  per person, and not per Primary/Secondary Customer). **Resolved (7 Aug 2026): structured to mirror
-  CampManager's own shape** (Address text block, County, Province,
-  Language) rather than inventing a fresh layout — deliberately, so
-  that importing existing CampManager customer data into ParkMan2 later
-  is a closer field-for-field match rather than a remapping exercise.
-  Province and Language will likely sit blank/unused for a single
-  North-Wales park, but are kept for that same import-compatibility
-  reason, not because Tree Tops itself needs them.
+- **Address, County, Province, Language** — structured to mirror
+  CampManager's own shape rather than inventing a fresh layout,
+  deliberately, so importing existing CampManager customer data later
+  is a closer field-for-field match. Province and Language will likely
+  sit blank/unused for a single North-Wales park, but are kept for that
+  same import-compatibility reason.
 - **Delivery preference** — email or paper, **defaults to email**. One
-  CustomerAccount-level setting (how bills go out), separate from each
-  CustomerPerson's own `receives_billing` flag (which of their emails
-  actually receive it, when the method is email).
-- **No relationship field between CustomerPerson rows** — explicitly not
-  needed; nothing about billing or correspondence depends on knowing
-  *how* they're related to each other. (This is separate from the
-  **Family Member** concept used for the Transfer Fee waiver in the
-  Purchase & Licence Agreement section above, which is about the
-  relationship between an *outgoing* and *incoming* owner at a resale,
-  not between people on the same account — that remains a separate,
-  still-open Phase 2 billing question.)
+  setting for the household (how bills go out), separate from each
+  person's own `receives billing` flag (which of the two emails actually
+  receive it, when the method is email).
 - **Next of Kin** — up to **two** entries, each just: Name, Relationship
-  (free text, e.g. "Son"), Contact number. Lives on CustomerAccount, not
-  CustomerPerson — an emergency-contact concept for the household, not
-  tied to any one named person or to billing.
-- **Notes** — one shared history for the whole Customer account, not one
-  per sub-customer (deliberately, to avoid the confusion of "which
-  person's notes is this"). **Resolved (7 Aug 2026): an append-only
-  dated log, not a single free-text field** — the only place staff can
-  record commentary about a customer, confirmed against a real
-  CampManager notes screen showing a running, dated history rather than
-  one edited-in-place blob. Same shape as the Maintenance app's
-  `job_activity` log (entry text + actor + timestamp), for the same
-  reason: a history you can't accidentally overwrite. Deliberately
-  designed now with an eye on the later document-generation roadmap
-  item above — once ParkMan2 can generate letters/emails from templates,
-  each generated/sent document should log its own entry here (and the
-  document itself gets stored, not just referenced), so this log becomes
-  the one place to see everything that's ever been said to or about a
-  customer. Not building document generation now, but shaping this log
-  as append-only from day one avoids a redesign later.
-- **Mailing List** (boolean, resolved 7 Aug 2026) — marketing opt-in,
-  kept as its own flag distinct from the billing **Delivery preference**
-  above (one's "can we market to you," the other's "how do bills reach
-  you" — genuinely different questions).
-- **Considered and explicitly declined (7 Aug 2026): a "Blacklisted"
-  flag**, seen on the same CampManager screen — not a concept Andy wants
-  carried into ParkMan2.
-- **Considered and explicitly declined (7 Aug 2026): a CampManager-style
-  "Reference" number** (e.g. `2317713`). That exists because CampManager
-  runs one shared database across all of its client parks, so it needs a
-  cross-tenant unique ID — not a Tree Tops concept, and not something
-  ParkMan2 needs to replicate since each Business already gets its own
-  separate database (see Roadmap above). A normal internal ID is enough.
+  (free text, e.g. "Son"), Contact number. An emergency-contact concept
+  for the household, not tied to billing.
+- **Notes** — an **append-only dated log**, not a single free-text
+  field — the only place staff can record commentary about a customer,
+  confirmed against a real CampManager notes screen showing a running,
+  dated history rather than one edited-in-place blob. Same shape as the
+  Maintenance app's `job_activity` log (entry text + actor + timestamp),
+  for the same reason: a history you can't accidentally overwrite.
+  Deliberately shaped now with an eye on the later document-generation
+  roadmap item — once ParkMan2 can generate letters/emails from
+  templates, each generated/sent document should log its own entry here
+  (and the document itself gets stored, not just referenced). Not
+  building document generation now, but shaping this log as append-only
+  from day one avoids a redesign later.
+- **Mailing List** (boolean) — marketing opt-in, kept distinct from
+  Delivery preference (one's "can we market to you," the other's "how do
+  bills reach you").
+- **Considered and explicitly declined**: a **"Blacklisted"** flag (seen
+  on the same CampManager screen, not a concept Andy wants carried in),
+  and a CampManager-style **"Reference"** number (e.g. `2317713`) — that
+  exists only because CampManager runs one shared database across every
+  client park; not needed since each ParkMan2 Business gets its own
+  separate database.
+
+**Ownership** (`caravan_id, primary_customer_id, secondary_customer_id`
+[nullable], `start_date, end_date`) — this is where "Primary vs
+Secondary" actually lives, as **which FK slot a Customer row fills**,
+not a flag on Customer itself. A resold caravan is a new Ownership row
+on the same Caravan record; a replaced caravan is a brand new Caravan
+record. Current owner is the row with no `end_date`.
 
 ### Season (new concept, 7 Aug 2026 — solves a real CampManager pain point)
 
