@@ -675,11 +675,11 @@ Grounded against the same real CampManager "Unit Summary" printout.
 
 - **Make, Model, Colour, Serial Number** — straightforward, all
   confirmed real fields.
-- **Model Year and Build Date are two separate fields, not one "Year".**
-  Andy: manufacturers release next year's model early — a 2026-model
-  caravan could genuinely have been built in June 2025. Collapsing this
-  into a single Year field would lose real information buyers care
-  about.
+- **Model Year and Build Year are two separate fields, not one "Year"**
+  (corrected 7 Aug 2026: both are plain numbers, not a full date). Andy:
+  manufacturers release next year's model early — a 2026-model caravan
+  could genuinely have been built in 2025. Collapsing this into a single
+  Year field would lose real information buyers care about.
 - **Length, Width, Bedrooms, Berths** — all real size fields. Bedroom
   count alone doesn't tell you sleeping capacity: a 2-bed sleeps 6 with
   a lounge pull-out sofa bed, 4 without; a 3-bed sleeps 8 with one. Andy
