@@ -149,11 +149,26 @@ Confirmed so far (Andy's own description, 6 Aug 2026):
     Storage/Display) and is current. "What's currently on this pitch" is
     derived from the open Placement row, not a `caravan_id` column on
     Pitch — one source of truth instead of two things that could
-    disagree. *(Flagging this as a restructure of already-written model
-    text, not just an addition — worth double-checking this matches what
-    you meant.)*
+    disagree.
   - A Customer having zero current Ownership rows covers both a
     prospective customer and a former customer who has left.
+  - **History itself is low-importance — an audit trail, not a key
+    operating function (resolved 7 Aug 2026).** Andy: it might be nice
+    to see where a customer's been on the park and what they've owned,
+    whether a caravan's moved around a lot, or a pitch's past
+    occupants — but none of that is a day-to-day operational need.
+    Volume backs that up: **20-30 sales and ~10 moves a year**, and most
+    of those moves are caravans *leaving* the park rather than
+    relocating within it. Two consequences: **no need to import
+    historical Ownership/Placement data from CampManager at go-live** —
+    starting every caravan with a single "as of go-live" row is fine,
+    since at this volume even manually reconstructing a handful of past
+    events later would be a small job if ever wanted; and **a
+    history-browsing screen is explicitly not a Phase 1 build item** —
+    the data accumulates in the schema regardless (that's the whole
+    point of keeping Ownership/Placement as proper historical tables
+    rather than current-state columns), a view onto it can wait
+    indefinitely without losing anything.
 
 ### Areas, Bands & Services (added 6 Aug 2026, from a real Tree Tops pitch-fee sheet)
 
@@ -933,10 +948,6 @@ Phase 1 or 2 — noted here so the roadmap accounts for it.
 
 ## Open questions / not yet decided
 
-- Whether Ownership/Placement history is needed in full from Phase 1,
-  or whether a simpler current-state-only version ships first with
-  history added later — a build-sequencing question, not a modelling
-  one, to revisit once implementation starts.
 - Whether/how to eventually import data from CampManager, and whether
   an onboarding tool for other CampManager users is ever worth building
   (raised as a possibility, not committed to).
