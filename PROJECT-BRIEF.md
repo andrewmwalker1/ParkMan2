@@ -802,6 +802,23 @@ already got right.
   exactly why Storage/Display needed to become real Pitch rows rather
   than a Placement-only label — a single "current occupant" concept
   doesn't fit a location that holds several caravans at once.
+  **Resolved (7 Aug 2026): Capacity is a real enforced limit**, not just
+  indicative like Length/Width — the system should refuse to open a new
+  Placement against a Pitch that's already at capacity. A park that
+  wants no effective limit just sets a high number (Andy's example:
+  999) rather than the model needing a separate "unlimited" concept.
+  Tree Tops' own Storage yard has a capacity of **2**.
+- **For-sale stock usually sits on ordinary pitches, not a dedicated
+  Display area.** Andy: most Tree Tops caravans for sale are already
+  sited on normal numbered pitches — identified by having **no current
+  Ownership row**, not by being on a special "Display" pitch. `Display`
+  stays in the Type lookup for parks that do run a dedicated sales lot,
+  but Tree Tops itself barely uses it; `Storage` (capacity 2) is the
+  one genuinely separate area in real use here. A caravan can sit on an
+  ordinary pitch with zero Ownership rows ever existing for it (brand
+  new stock, never sold) just as easily as a former customer's caravan
+  with zero *current* Ownership rows — both are just "no open Ownership
+  row," nothing extra needed in the model for either case.
 - **Length, Width** — real fields, but explicitly **indicative, not
   enforced**. Andy: a 34' caravan sometimes goes on a 35' pitch, and a
   36' caravan can sometimes be squeezed onto a 35' plot — these are a
