@@ -580,6 +580,10 @@ Fields:
   the one place to see everything that's ever been said to or about a
   customer. Not building document generation now, but shaping this log
   as append-only from day one avoids a redesign later.
+- **Mailing List** (boolean, resolved 7 Aug 2026) — marketing opt-in,
+  kept as its own flag distinct from the billing **Delivery preference**
+  above (one's "can we market to you," the other's "how do bills reach
+  you" — genuinely different questions).
 - **Considered and explicitly declined (7 Aug 2026): a "Blacklisted"
   flag**, seen on the same CampManager screen — not a concept Andy wants
   carried into ParkMan2.
