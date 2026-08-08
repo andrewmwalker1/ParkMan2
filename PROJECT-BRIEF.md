@@ -80,23 +80,38 @@ logic is only as good as the records underneath it:
     pattern elsewhere in this brief) rather than manually assigning
     every Park to every Head Office profile — a newly added Park
     shouldn't require updating existing staff.
-  - **Ad hoc exceptions on top of that scoping** — Andy's example: a
-    mobile engineer normally covers 3 of a business's 10 Parks, but a
-    manager with the right authority should be able to allocate a job
-    to that engineer for a Park outside their normal coverage. *(Open:
-    is this exception permanent (adds to the engineer's standing
-    scope) or scoped to just that one job/assignment and nothing else
-    at that Park? Andy's phrasing ("allocate a job to a park") leans
-    toward the latter, but not yet confirmed.)*
-  - **Field-level, not just row-level, permission** — a genuinely
-    different axis from the above. Andy's example: the same mobile
-    engineer might need to see a Customer record well enough to
-    contact them (name, phone), but the business may want to exclude
-    them from that Customer's **correspondence** (the Notes log) and
-    **financial information**. This means "can see this row" and "can
-    see every field on this row" need to be separable, which the
-    current RLS design doesn't attempt — RLS decides row visibility,
-    not per-column visibility within a visible row.
+  - **Ad hoc exceptions on top of that scoping — resolved (7 Aug
+    2026).** Andy's example: a mobile engineer normally covers 3 of a
+    business's 10 Parks, but a manager with the right authority should
+    be able to allocate a job to that engineer for a Park outside
+    their normal coverage. **Confirmed narrow**: the grant covers
+    exactly that one **job, customer, and pitch** — not the whole
+    Park, and not a standing change to the engineer's normal scope.
+  - **Section-level, not field-level, permission — resolved (7 Aug
+    2026), and broader than just the maintenance-engineer case.** What
+    started as "hide correspondence/financial info from one kind of
+    user" turned out to want a general-purpose system controlling what
+    **any** role gets to see, everywhere — but scoped to whole
+    **sections/tabs of a record**, not individual fields. Andy's
+    example: a Customer record's "Invoices" tab could be permission-
+    gated as a unit, same as the whole tab either shows or doesn't.
+    This is meaningfully simpler to build than true field-level
+    control, and isn't even a new pattern — it's the same shape as the
+    Maintenance app's existing `role_permissions` (named permission
+    keys like `can_manage_users`, checked before a feature is shown),
+    just applied to "which tabs a role can see" rather than "which
+    actions a role can take." A useful side effect: anything that
+    genuinely needs independent permission-gating (e.g. billing/
+    correspondence) is a signal it probably belongs in its **own
+    related table** rather than as inline columns on Customer —
+    matching how `CustomerNote` and the future Invoices concept would
+    naturally be separate tables anyway, which is exactly what makes
+    table-level RLS able to enforce the gate cleanly.
+  - **What counts as "financial" stays open until the screens exist**
+    — Andy: "the scope will become more apparent when we see how the
+    screens are structured." Not worth forcing a definition ahead of
+    that; once Customer/Caravan screens have real tabs, assigning a
+    permission key per tab is the natural point to settle this.
 
   **Deliberately not designed or built yet** — this is real and worth
   keeping in view, but building the field-level permission model
