@@ -1,8 +1,10 @@
 # ParkMan2 — Project Briefing
 
-**Last updated:** 7 Aug 2026 — Rates/Water/Refuse and Pitch Fee
-proration resolved, meter-reading validation and Join opening readings
-resolved; still no code written
+**Last updated:** 7 Aug 2026 — Customer/Caravan/Pitch/Business/Park/Area
+fully scoped, Phase 1 schema+RLS+auth built and deployed live at
+andrewmwalker1.github.io/ParkMan2 (running in a temporary shared schema
+inside Hub's Supabase project — see "Repo & hosting" below), multi-park
+staff access control documented as a future requirement
 
 ## Who you're talking to
 
@@ -63,6 +65,43 @@ logic is only as good as the records underneath it:
   [Maintenance app](../treetops-maintenance) so work carried out on
   pitches/caravans can be tracked, quoted, and billed through ParkMan2
   rather than being a separate system.
+
+  **Multi-park staff access control (raised 7 Aug 2026, tied to this
+  merge):** not needed for Tree Tops today (one Park), but a real
+  requirement for a business with several Parks, and the shape of it is
+  already worth capturing so it isn't designed blind later:
+  - **Row-level park scoping** — three example tiers Andy gave: Head
+    Office (sees every Park), Area Manager (sees a subset of Parks
+    they're responsible for), Park Manager (sees exactly one Park).
+    Same shape as the Maintenance app's existing `site_scope`
+    (`profile_id, site_id`) — reuse that pattern rather than inventing
+    a new one. "Sees all Parks" should be a role-level flag (e.g. on a
+    data-driven Role lookup, matching the PitchType/CaravanStatus
+    pattern elsewhere in this brief) rather than manually assigning
+    every Park to every Head Office profile — a newly added Park
+    shouldn't require updating existing staff.
+  - **Ad hoc exceptions on top of that scoping** — Andy's example: a
+    mobile engineer normally covers 3 of a business's 10 Parks, but a
+    manager with the right authority should be able to allocate a job
+    to that engineer for a Park outside their normal coverage. *(Open:
+    is this exception permanent (adds to the engineer's standing
+    scope) or scoped to just that one job/assignment and nothing else
+    at that Park? Andy's phrasing ("allocate a job to a park") leans
+    toward the latter, but not yet confirmed.)*
+  - **Field-level, not just row-level, permission** — a genuinely
+    different axis from the above. Andy's example: the same mobile
+    engineer might need to see a Customer record well enough to
+    contact them (name, phone), but the business may want to exclude
+    them from that Customer's **correspondence** (the Notes log) and
+    **financial information**. This means "can see this row" and "can
+    see every field on this row" need to be separable, which the
+    current RLS design doesn't attempt — RLS decides row visibility,
+    not per-column visibility within a visible row.
+
+  **Deliberately not designed or built yet** — this is real and worth
+  keeping in view, but building the field-level permission model
+  against a Maintenance merge that isn't scheduled would be guessing.
+  Revisit properly once that merge is actually being planned.
 - **Possible multi-business future:** if other CampManager users show
   interest, each business would get its **own separate Supabase
   project/database** — not shared multi-tenant tables. The app would
@@ -105,9 +144,28 @@ not as an afterthought:
 
 - Local repo: `C:\Users\andy\Documents\GitHub\ParkMan2`
 - GitHub: [`andrewmwalker1/ParkMan2`](https://github.com/andrewmwalker1/ParkMan2)
-- Supabase project: not yet created.
-- No code written yet as of this writing — repo currently contains only
-  this file and a placeholder README.
+  (public, matching Hub/Maintenance — GitHub Pages needs a paid plan on
+  a private repo)
+- Live dev deploy: `https://andrewmwalker1.github.io/ParkMan2/`
+- **Supabase: no dedicated project yet, deliberately deferred.** Running
+  in a temporary, free `parkman2` Postgres schema inside **Hub's**
+  existing Supabase project (`qkbpsqlrzygcairtidye`) — a paused 3rd
+  project on the org's free tier would've needed paying (£25/mo) or
+  killing an active project to reactivate, so sharing was chosen
+  instead. `auth.users` is therefore shared with Hub (Supabase Auth is
+  project-wide, not per-schema) — Andy's Hub login also works here.
+  Move to its own dedicated project once Andy pays for Supabase
+  ("in a couple of weeks when Maintenance is fully live," per Andy,
+  7 Aug 2026) — at that point also revisit whether ParkMan2 and
+  Maintenance should eventually share **one** permanent project instead
+  (see the Maintenance integration roadmap item above), since that's
+  the one choice that actually matters for how easily a future merge
+  goes — which temporary project hosted the schema during early dev
+  does not.
+- Schema/RLS SQL lives in `supabase/01-*.sql` through `04-*.sql`,
+  applied via `node scripts/run-sql.mjs <file>` — NOT `supabase db
+  query --file`, which can't run multi-statement SQL files (see that
+  script's comment for why).
 
 ## Data model (draft)
 
