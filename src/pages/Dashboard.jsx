@@ -18,11 +18,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div style={{ ...cardStyle, padding: "20px 24px" }}>
+      <div style={{ ...cardStyle, padding: "20px 24px", marginBottom: "20px" }}>
         <p style={{ color: colors.ink, margin: 0 }}>Signed in as {profile?.display_name}.</p>
-        <p style={{ color: colors.inkSoft, fontSize: "14px" }}>
-          Customers, Caravans, and Pitches screens land here as Phase 1 continues.
-        </p>
+      </div>
+
+      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        <Link to="/pitches" style={{ ...buttonStyle.primary, textDecoration: "none", display: "inline-block" }}>Pitches</Link>
       </div>
     </div>
   );

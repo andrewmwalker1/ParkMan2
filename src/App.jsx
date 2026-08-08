@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./lib/AuthContext.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Admin from "./pages/Admin.jsx";
+import Pitches from "./pages/Pitches.jsx";
 import { colors, pageStyle } from "./lib/theme.js";
 
 function AppShell() {
@@ -33,6 +34,7 @@ function AppShell() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/pitches" element={<Pitches />} />
       </Routes>
     </div>
   );
