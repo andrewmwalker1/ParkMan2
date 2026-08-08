@@ -4,6 +4,8 @@ import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Admin from "./pages/Admin.jsx";
 import Pitches from "./pages/Pitches.jsx";
+import Customers from "./pages/Customers.jsx";
+import CustomerDetail from "./pages/CustomerDetail.jsx";
 import { colors, pageStyle } from "./lib/theme.js";
 
 function AppShell() {
@@ -35,6 +37,8 @@ function AppShell() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/pitches" element={<Pitches />} />
+        <Route path="/customers" element={<Customers />} />
+        <Route path="/customers/:id" element={<CustomerDetail />} />
       </Routes>
     </div>
   );
