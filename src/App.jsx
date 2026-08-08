@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/AuthContext.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
+import Admin from "./pages/Admin.jsx";
 import { colors, pageStyle } from "./lib/theme.js";
 
 function AppShell() {
@@ -31,6 +32,7 @@ function AppShell() {
     <div style={pageStyle}>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </div>
   );
