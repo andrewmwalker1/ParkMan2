@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext.jsx";
 import { supabase } from "../lib/supabaseClient.js";
+import AddressFields from "./admin/AddressFields.jsx";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
 const fieldStyle = {
@@ -21,7 +22,7 @@ const blank = {
   customer1_title: "", customer1_first_name: "", customer1_surname: "", customer1_phone: "", customer1_email: "", customer1_receives_billing: true,
   customer2_title: "", customer2_first_name: "", customer2_surname: "", customer2_phone: "", customer2_email: "", customer2_receives_billing: false,
   correspondence_salutation: "", address_salutation: "",
-  address_line1: "", address_line2: "", town: "", county: "", postcode: "", language: "",
+  street: "", town: "", county: "", country: "UK", postcode: "", language: "",
   delivery_preference: "email", mailing_list: false,
   nok1_name: "", nok1_relationship: "", nok1_phone: "",
   nok2_name: "", nok2_relationship: "", nok2_phone: "",
@@ -171,15 +172,7 @@ export default function CustomerDetail() {
             </div>
           </div>
 
-          <label style={labelStyle}>Address line 1</label>
-          <input value={form.address_line1 || ""} onChange={(e) => setForm({ ...form, address_line1: e.target.value })} style={fieldStyle} />
-          <label style={labelStyle}>Address line 2</label>
-          <input value={form.address_line2 || ""} onChange={(e) => setForm({ ...form, address_line2: e.target.value })} style={fieldStyle} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
-            <div><label style={labelStyle}>Town</label><input value={form.town || ""} onChange={(e) => setForm({ ...form, town: e.target.value })} style={fieldStyle} /></div>
-            <div><label style={labelStyle}>County</label><input value={form.county || ""} onChange={(e) => setForm({ ...form, county: e.target.value })} style={fieldStyle} /></div>
-            <div><label style={labelStyle}>Postcode</label><input value={form.postcode || ""} onChange={(e) => setForm({ ...form, postcode: e.target.value })} style={fieldStyle} /></div>
-          </div>
+          <AddressFields form={form} setForm={setForm} />
 
           <div style={{ display: "flex", gap: "16px", alignItems: "center", marginTop: "6px" }}>
             <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: colors.inkSoft }}>

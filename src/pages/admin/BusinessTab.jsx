@@ -26,7 +26,7 @@ export default function BusinessTab() {
     if (!profile) return;
     supabase
       .from("business")
-      .select("id, name, address_line1, address_line2, town, county, postcode, phone, email, vat_number, company_number")
+      .select("id, name, street, town, county, country, postcode, phone, email, vat_number, company_number")
       .eq("id", profile.business_id)
       .single()
       .then(({ data, error: err }) => {
@@ -43,10 +43,10 @@ export default function BusinessTab() {
       .from("business")
       .update({
         name: form.name,
-        address_line1: form.address_line1,
-        address_line2: form.address_line2,
+        street: form.street,
         town: form.town,
         county: form.county,
+        country: form.country,
         postcode: form.postcode,
         phone: form.phone,
         email: form.email,

@@ -90,7 +90,7 @@ export default function PitchBandsTab() {
       {bands.length === 0 && areas.length > 0 && <p style={{ color: colors.inkSoft }}>No pitch bands yet.</p>}
 
       {form && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(49, 56, 45, 0.5)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px", overflowY: "auto", zIndex: 100 }} onClick={() => setForm(null)}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(49, 56, 45, 0.5)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px", overflowY: "auto", zIndex: 100 }}>
           <div style={{ ...cardStyle, padding: "20px", width: "100%", maxWidth: "400px" }} onClick={(e) => e.stopPropagation()}>
             <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.mossDark, marginTop: 0 }}>
               {form.id ? "Edit pitch band" : "New pitch band"}

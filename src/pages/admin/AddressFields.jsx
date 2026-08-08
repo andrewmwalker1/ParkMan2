@@ -10,20 +10,20 @@ const fieldStyle = {
   marginBottom: "10px",
 };
 
+const textareaStyle = { ...fieldStyle, resize: "vertical", fontFamily: fonts.body };
 const labelStyle = { display: "block", fontSize: "12px", color: colors.inkSoft, marginBottom: "4px" };
 
-// Structured address fields shared by Business and Park -- broken out
-// (rather than one free-text block, unlike Customer's address which
-// deliberately stayed a blob to mirror CampManager's shape) so mail
-// merge has real fields to merge into, not a block of prose to parse.
+// Structured address fields shared by Business, Park, and Customer --
+// Street/Town/County/Country/Postcode, corrected 8 Aug 2026 after
+// review: Street is a multi-line box (a real address can run past one
+// line), and Country was missing (defaults UK). Broken into real
+// fields rather than one free-text block (unlike CampManager's
+// printout display) so mail merge has real fields to merge into.
 export default function AddressFields({ form, setForm }) {
   return (
     <>
-      <label style={labelStyle}>Address line 1</label>
-      <input value={form.address_line1 || ""} onChange={(e) => setForm({ ...form, address_line1: e.target.value })} style={fieldStyle} />
-
-      <label style={labelStyle}>Address line 2</label>
-      <input value={form.address_line2 || ""} onChange={(e) => setForm({ ...form, address_line2: e.target.value })} style={fieldStyle} />
+      <label style={labelStyle}>Street</label>
+      <textarea rows={2} value={form.street || ""} onChange={(e) => setForm({ ...form, street: e.target.value })} style={textareaStyle} />
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
         <div>
@@ -33,6 +33,10 @@ export default function AddressFields({ form, setForm }) {
         <div>
           <label style={labelStyle}>County</label>
           <input value={form.county || ""} onChange={(e) => setForm({ ...form, county: e.target.value })} style={fieldStyle} />
+        </div>
+        <div>
+          <label style={labelStyle}>Country</label>
+          <input value={form.country || ""} onChange={(e) => setForm({ ...form, country: e.target.value })} style={fieldStyle} />
         </div>
         <div>
           <label style={labelStyle}>Postcode</label>

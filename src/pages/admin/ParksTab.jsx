@@ -17,9 +17,9 @@ const fieldStyle = {
 const labelStyle = { display: "block", fontSize: "12px", color: colors.inkSoft, marginBottom: "4px" };
 
 const blank = {
-  id: null, name: "", address_line1: "", address_line2: "", town: "", county: "", postcode: "",
+  id: null, name: "", street: "", town: "", county: "", country: "UK", postcode: "",
   phone: "", fax: "", web: "", email: "",
-  vat_number: "", company_number: "", default_vat_rate: "",
+  vat_number: "", company_number: "",
   bank_account_number: "", bank_sort_code: "",
 };
 
@@ -32,7 +32,7 @@ export default function ParksTab() {
   function refresh() {
     supabase
       .from("park")
-      .select("id, name, address_line1, address_line2, town, county, postcode, phone, fax, web, email, vat_number, company_number, default_vat_rate, bank_account_number, bank_sort_code")
+      .select("id, name, street, town, county, country, postcode, phone, fax, web, email, vat_number, company_number, bank_account_number, bank_sort_code")
       .eq("business_id", profile.business_id)
       .order("name")
       .then(({ data, error: err }) => {
@@ -46,7 +46,7 @@ export default function ParksTab() {
   async function handleSave(e) {
     e.preventDefault();
     setError(null);
-    const payload = { ...form, business_id: profile.business_id, default_vat_rate: form.default_vat_rate || null };
+    const payload = { ...form, business_id: profile.business_id };
     delete payload.id;
     const { error: err } = form.id
       ? await supabase.from("park").update(payload).eq("id", form.id)
@@ -77,7 +77,7 @@ export default function ParksTab() {
         <div key={p.id} style={{ ...cardStyle, padding: "12px 16px", marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ fontWeight: 600 }}>{p.name}</div>
-            <div style={{ fontSize: "12px", color: colors.inkSoft }}>{[p.address_line1, p.town, p.postcode].filter(Boolean).join(", ")}</div>
+            <div style={{ fontSize: "12px", color: colors.inkSoft }}>{[p.street, p.town, p.postcode].filter(Boolean).join(", ")}</div>
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
             <button onClick={() => { setError(null); setForm({ ...blank, ...p }); }} style={buttonStyle.secondary}>Edit</button>
@@ -88,8 +88,8 @@ export default function ParksTab() {
       {parks.length === 0 && <p style={{ color: colors.inkSoft }}>No parks yet.</p>}
 
       {form && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(49, 56, 45, 0.5)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px", overflowY: "auto", zIndex: 100 }} onClick={() => setForm(null)}>
-          <div style={{ ...cardStyle, padding: "20px", width: "100%", maxWidth: "480px" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(49, 56, 45, 0.5)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px", overflowY: "auto", zIndex: 100 }}>
+          <div style={{ ...cardStyle, padding: "20px", width: "100%", maxWidth: "480px" }}>
             <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.mossDark, marginTop: 0 }}>
               {form.id ? "Edit park" : "New park"}
             </h2>
@@ -97,8 +97,7 @@ export default function ParksTab() {
               <label style={labelStyle}>Name</label>
               <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={fieldStyle} />
 
-              <label style={labelStyle}>Address</label>
-              <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} style={fieldStyle} />
+              <AddressFields form={form} setForm={setForm} />
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 <div><label style={labelStyle}>Phone</label><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} style={fieldStyle} /></div>
@@ -107,8 +106,6 @@ export default function ParksTab() {
                 <div><label style={labelStyle}>Email</label><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={fieldStyle} /></div>
                 <div><label style={labelStyle}>VAT number</label><input value={form.vat_number} onChange={(e) => setForm({ ...form, vat_number: e.target.value })} style={fieldStyle} /></div>
                 <div><label style={labelStyle}>Company number</label><input value={form.company_number} onChange={(e) => setForm({ ...form, company_number: e.target.value })} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Default VAT rate (%)</label><input type="number" step="0.01" value={form.default_vat_rate} onChange={(e) => setForm({ ...form, default_vat_rate: e.target.value })} style={fieldStyle} /></div>
-                <div />
                 <div><label style={labelStyle}>Bank account number</label><input value={form.bank_account_number} onChange={(e) => setForm({ ...form, bank_account_number: e.target.value })} style={fieldStyle} /></div>
                 <div><label style={labelStyle}>Bank sort code</label><input value={form.bank_sort_code} onChange={(e) => setForm({ ...form, bank_sort_code: e.target.value })} style={fieldStyle} /></div>
               </div>
