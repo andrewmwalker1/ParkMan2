@@ -679,15 +679,19 @@ Fields on **Customer**:
   wants to be addressed doesn't reliably follow from their legal name.
 - **Address Salutation** (free text) — the letter/label form, e.g.
   "Mr & Mrs J Smith". Same reasoning: not derived, entered directly.
-- **Address, Postcode, County, Language** — corrected 7 Aug 2026 after
-  seeing it mocked up: **Province dropped entirely** (Andy: not needed),
-  and **Postcode split out as its own field** rather than sitting as the
-  last line inside the free-text Address block — it's structured data
-  people search/sort/validate on, not prose. Address itself stays a
-  multi-line free-text block (street, town) for the same
-  CampManager-shape reason as before; Language will likely sit
-  blank/unused for a single North-Wales park but is kept for that same
-  reason.
+- **Address Line 1, Address Line 2, Town, County, Postcode, Language**
+  — corrected twice, 7 Aug 2026. First pass (after seeing it mocked up):
+  Province dropped entirely (Andy: not needed), Postcode split out as
+  its own field. Second, more important correction: the "Address stays
+  one free-text block to mirror CampManager's shape" reasoning was
+  simply **wrong** — it came from how a printed CampManager summary
+  *displayed* an address (stacked lines in one printout cell), not from
+  CampManager's actual underlying data, which Andy confirmed is already
+  broken into separate fields. **Fully structured now** (Address Line
+  1/2, Town, County, Postcode) — this is the *better* CampManager import
+  match, not a worse one. Same correction already applied to
+  Business/Park addresses below. Language stays, likely blank/unused for
+  a single North-Wales park but kept for the same import-shape reason.
 - **Delivery preference** — email or paper, **defaults to email**. One
   setting for the household (how bills go out), separate from each
   person's own `receives billing` flag (which of the two emails actually
@@ -969,7 +973,10 @@ Grounded partly against the letterhead block on the same CampManager
 web, VAT number) — not just guessed.
 
 **Business:**
-- `name`, `address`, `phone`, `email`
+- `name`, `address_line1`, `address_line2`, `town`, `county`, `postcode`
+  (structured, not a free-text block — resolved 7 Aug 2026 for
+  mail-merge, see Customer's Address correction above for why), `phone`,
+  `email`
 - `vat_number`, `company_number` — **both Business and Park carry these,
   deliberately.** Andy: some businesses incorporate each park as its own
   limited company, others run everything under one group company — the
@@ -977,8 +984,9 @@ web, VAT number) — not just guessed.
   get the fields rather than picking one.
 
 **Park:**
-- `name`, `address`, `phone`, `fax`, `web`, `email` — real example, Tree
-  Tops' is `info@treetopscaravanpark.co.uk`
+- `name`, `address_line1`, `address_line2`, `town`, `county`, `postcode`
+  (structured, same as Business), `phone`, `fax`, `web`, `email` — real
+  example, Tree Tops' is `info@treetopscaravanpark.co.uk`
 - `vat_number`, `company_number` (see above)
 - `default_vat_rate` — already resolved elsewhere, stays Park-level
   since an HMRC domestic-use agreement is granted per-site.
@@ -989,7 +997,10 @@ web, VAT number) — not just guessed.
   letterhead data, not a live requirement.
 
 **Area:**
-- `name`, `park_id`, `season_id` (already established)
+- `name`, `code`, `park_id`, `season_id`. `code` was missing from the
+  original schema (added 7 Aug 2026) despite Pitch numbering already
+  assuming it — e.g. "PN-A16" needs Parc Newydd's code (`PN`) to exist
+  somewhere.
 
 **Deferred, not built now — Documents (letters, licence agreement
 templates, logos):** confirmed this belongs at **Park level, not
