@@ -25,6 +25,7 @@ export default function Dashboard() {
       <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
         <Link to="/pitches" style={{ ...buttonStyle.primary, textDecoration: "none", display: "inline-block" }}>Pitches</Link>
         <Link to="/customers" style={{ ...buttonStyle.primary, textDecoration: "none", display: "inline-block" }}>Customers</Link>
+        <Link to="/caravans" style={{ ...buttonStyle.primary, textDecoration: "none", display: "inline-block" }}>Caravans</Link>
       </div>
     </div>
   );
