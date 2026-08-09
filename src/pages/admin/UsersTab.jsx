@@ -106,37 +106,33 @@ export default function UsersTab() {
                 </div>
               </form>
             ) : (
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontWeight: 600 }}>
-                    {u.display_name}
-                    {u.is_active === false && (
-                      <span style={{ marginLeft: "8px", fontSize: "11px", color: colors.immediate, fontWeight: 600 }}>DEACTIVATED</span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: "12px", color: colors.inkSoft }}>{u.email}</div>
+              <div>
+                <div style={{ fontWeight: 600 }}>
+                  {u.display_name}
+                  {u.is_active === false && (
+                    <span style={{ marginLeft: "8px", fontSize: "11px", color: colors.immediate, fontWeight: 600 }}>DEACTIVATED</span>
+                  )}
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <button onClick={() => startEdit(u)} style={buttonStyle.secondary}>Edit</button>
-                    {u.is_active === false ? (
-                      <button disabled={busyId === u.id} onClick={() => setActive(u.id, true)} style={buttonStyle.secondary}>Reactivate</button>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => handleResend(u.email, u.id)}
-                          disabled={resendStatus[u.id] === "sending"}
-                          style={buttonStyle.secondary}
-                        >
-                          {resendStatus[u.id] === "sending" ? "Sending…" : "Resend sign-in link"}
-                        </button>
-                        <button disabled={busyId === u.id} onClick={() => setActive(u.id, false)} style={{ ...buttonStyle.secondary, color: colors.immediate }}>Deactivate</button>
-                      </>
-                    )}
-                  </div>
-                  {resendStatus[u.id] === "sent" && <span style={{ fontSize: "12px", color: colors.moss }}>Sign-in email sent</span>}
-                  {resendStatus[u.id] === "error" && <span style={{ fontSize: "12px", color: colors.immediate }}>Failed to send — see message above</span>}
+                <div style={{ fontSize: "12px", color: colors.inkSoft, marginBottom: "10px" }}>{u.email}</div>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <button onClick={() => startEdit(u)} style={buttonStyle.secondary}>Edit</button>
+                  {u.is_active === false ? (
+                    <button disabled={busyId === u.id} onClick={() => setActive(u.id, true)} style={buttonStyle.secondary}>Reactivate</button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleResend(u.email, u.id)}
+                        disabled={resendStatus[u.id] === "sending"}
+                        style={buttonStyle.secondary}
+                      >
+                        {resendStatus[u.id] === "sending" ? "Sending…" : "Resend invite"}
+                      </button>
+                      <button disabled={busyId === u.id} onClick={() => setActive(u.id, false)} style={{ ...buttonStyle.secondary, color: colors.immediate }}>Deactivate</button>
+                    </>
+                  )}
                 </div>
+                {resendStatus[u.id] === "sent" && <p style={{ fontSize: "12px", color: colors.moss, margin: "6px 0 0" }}>Sign-in email sent</p>}
+                {resendStatus[u.id] === "error" && <p style={{ fontSize: "12px", color: colors.immediate, margin: "6px 0 0" }}>Failed to send — see message above</p>}
               </div>
             )}
           </div>
