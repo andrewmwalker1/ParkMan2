@@ -18,6 +18,7 @@ export default function Caravans() {
   const [search, setSearch] = useState("");
   const [error, setError] = useState(null);
   const [locations, setLocations] = useState({});
+  const [owners, setOwners] = useState({});
 
   useEffect(() => {
     supabase
@@ -39,6 +40,18 @@ export default function Caravans() {
           if (p.pitch) map[p.caravan_id] = `${p.pitch.area?.code}-${p.pitch.number}`;
         });
         setLocations(map);
+      });
+
+    supabase
+      .from("ownership")
+      .select("caravan_id, primary_customer:primary_customer_id(address_salutation)")
+      .is("end_date", null)
+      .then(({ data }) => {
+        const map = {};
+        (data || []).forEach((o) => {
+          if (o.primary_customer?.address_salutation) map[o.caravan_id] = o.primary_customer.address_salutation;
+        });
+        setOwners(map);
       });
   }, []);
 
@@ -87,6 +100,7 @@ export default function Caravans() {
             </div>
             <div style={{ fontSize: "12px", color: colors.inkSoft }}>
               {locations[c.id] || "Off-park"}
+              {owners[c.id] && <> · {owners[c.id]}</>}
             </div>
           </div>
           {c.key_number && (

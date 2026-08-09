@@ -161,15 +161,13 @@ export default function CustomerDetail() {
 
         <div style={{ ...cardStyle, padding: "20px 24px", marginBottom: "16px" }}>
           <div style={sectionLabelStyle}>Address & correspondence</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <div>
-              <label style={labelStyle}>Correspondence salutation</label>
-              <input placeholder="e.g. Andy" value={form.correspondence_salutation || ""} onChange={(e) => setForm({ ...form, correspondence_salutation: e.target.value })} style={fieldStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Address salutation</label>
-              <input placeholder="e.g. Mr & Mrs A Smith" value={form.address_salutation || ""} onChange={(e) => setForm({ ...form, address_salutation: e.target.value })} style={fieldStyle} />
-            </div>
+          <div>
+            <label style={labelStyle}>Correspondence salutation</label>
+            <input placeholder="e.g. Andy" value={form.correspondence_salutation || ""} onChange={(e) => setForm({ ...form, correspondence_salutation: e.target.value })} style={fieldStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Address salutation</label>
+            <input placeholder="e.g. Mr & Mrs A Smith" value={form.address_salutation || ""} onChange={(e) => setForm({ ...form, address_salutation: e.target.value })} style={fieldStyle} />
           </div>
 
           <AddressFields form={form} setForm={setForm} />
