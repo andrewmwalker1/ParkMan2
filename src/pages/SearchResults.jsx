@@ -145,7 +145,7 @@ export default function SearchResults() {
                   <td style={tdStyle}>
                     {r.pitch ? (
                       <>
-                        <Link to={`/pitches?open=${r.pitch.id}`} style={linkStyle}>{r.pitch.number}</Link>
+                        <Link to={`/units/${r.pitch.id}?tab=pitch`} style={linkStyle}>{r.pitch.number}</Link>
                         <div style={subStyle}>{r.pitch.area?.name}</div>
                       </>
                     ) : (
@@ -155,7 +155,7 @@ export default function SearchResults() {
                   <td style={tdStyle}>
                     {r.customer ? (
                       <>
-                        <Link to={`/customers/${r.customer.id}`} style={linkStyle}>{customerName(r.customer)}</Link>
+                        <Link to={r.pitch ? `/units/${r.pitch.id}?tab=customer` : `/customers/${r.customer.id}`} style={linkStyle}>{customerName(r.customer)}</Link>
                         {customerContact(r.customer) && <div style={subStyle}>{customerContact(r.customer)}</div>}
                       </>
                     ) : (
@@ -165,7 +165,7 @@ export default function SearchResults() {
                   <td style={tdStyle}>
                     {r.caravan ? (
                       <>
-                        <Link to={`/caravans/${r.caravan.id}`} style={linkStyle}>{caravanLabel(r.caravan)}</Link>
+                        <Link to={r.pitch ? `/units/${r.pitch.id}?tab=caravan` : `/caravans/${r.caravan.id}`} style={linkStyle}>{caravanLabel(r.caravan)}</Link>
                         {r.caravan.key_number && <div style={{ ...subStyle, fontFamily: fonts.mono }}>{r.caravan.key_number}</div>}
                       </>
                     ) : (

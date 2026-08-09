@@ -24,8 +24,8 @@ const blank = {
   correspondence_salutation: "", address_salutation: "",
   street: "", town: "", county: "", country: "UK", postcode: "", language: "",
   delivery_preference: "email", mailing_list: false,
-  nok1_name: "", nok1_relationship: "", nok1_phone: "",
-  nok2_name: "", nok2_relationship: "", nok2_phone: "",
+  nok1_name: "", nok1_relationship: "", nok1_phone: "", nok1_email: "",
+  nok2_name: "", nok2_relationship: "", nok2_phone: "", nok2_email: "",
 };
 
 export default function CustomerDetail() {
@@ -188,10 +188,15 @@ export default function CustomerDetail() {
         <div style={{ ...cardStyle, padding: "20px 24px", marginBottom: "16px" }}>
           <div style={sectionLabelStyle}>Next of kin</div>
           {[1, 2].map((n) => (
-            <div key={n} style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", gap: "10px" }}>
-              <input placeholder="Name" value={form[`nok${n}_name`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_name`]: e.target.value })} style={fieldStyle} />
-              <input placeholder="Relationship" value={form[`nok${n}_relationship`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_relationship`]: e.target.value })} style={fieldStyle} />
-              <input placeholder="Contact number" value={form[`nok${n}_phone`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_phone`]: e.target.value })} style={fieldStyle} />
+            <div key={n} style={{ marginBottom: "6px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "10px" }}>
+                <input placeholder="Name" value={form[`nok${n}_name`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_name`]: e.target.value })} style={fieldStyle} />
+                <input placeholder="Relationship" value={form[`nok${n}_relationship`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_relationship`]: e.target.value })} style={fieldStyle} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <input placeholder="Contact number" value={form[`nok${n}_phone`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_phone`]: e.target.value })} style={fieldStyle} />
+                <input type="email" placeholder="Email" value={form[`nok${n}_email`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_email`]: e.target.value })} style={fieldStyle} />
+              </div>
             </div>
           ))}
         </div>

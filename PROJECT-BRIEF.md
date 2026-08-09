@@ -226,11 +226,45 @@ Andy asked for. Went through two shapes on that same day:
    embedded-filter edge cases. Off-park caravans and ownerless customers
    still get a row (blank Pitch cell) rather than being dropped.
 
-Pitch cells deep-link via `/pitches?open=<id>` since Pitches has no
-dedicated detail route (inline modal) — Pitches.jsx reads that param on
-load and opens the matching row's edit modal. The nav shell itself
-(sidebar/topbar) is pinned to the viewport — only the content area
-scrolls — since it was scrolling out of view on long lists.
+The nav shell itself (sidebar/topbar) is pinned to the viewport — only
+the content area scrolls — since it was scrolling out of view on long
+lists.
+
+## Unit page — the day-to-day working screen (9 Aug 2026)
+
+Andy: "We now need a form that brings together a pitch, Customer
+(Primary and secondary) and Caravan. This will be the main form we work
+from day to day." Built as `/units/:pitchId` (`UnitDetail.jsx`),
+anchored on the Pitch since that's the one constant identity — caravan
+and customer change over time via Placement/Ownership.
+
+- **Three tabs, in this order: Customer, Caravan, Pitch** — Andy asked
+  for tabs instead of one long stacked page "to make better use of the
+  space and allow us to grow moving forward" (documents/email
+  creation, one-off invoicing, individual meter readings are named as
+  coming later — not built yet, this is just the shell they'll land in).
+  `?tab=customer|caravan|pitch` on the URL opens straight to that tab —
+  Search Results links each cell (Pitch/Customer/Caravan) to the
+  matching tab of the same unit rather than to that entity's own
+  standalone page, and Andy confirmed this page should be what search
+  results actually open into, not the old per-entity pages.
+- **Customer tab**: Primary customer card, and a Secondary customer
+  card once a primary exists (`Ownership.secondary_customer_id`).
+  Quick-edit fields only (name/phone/email + Next of Kin, added same
+  day with an email field per Andy's follow-up — `nok1_email`/
+  `nok2_email`, migration 14) — address/notes stay on the full
+  `/customers/:id` record, linked from here. Assigning an owner (either
+  slot) is a search-existing-customer picker; creating a brand new
+  customer still happens on the full Customers screen (deliberately not
+  duplicating that whole form here).
+- **Caravan tab**: same quick-edit subset as the full Caravan record
+  (make/model/key number/PAT+Gas expiry/for sale), link to the full
+  `/caravans/:id` record for dimensions/colour/serial/etc.
+- **Pitch tab**: read-only summary (area/type/status) + link to the
+  existing Pitches inline-modal editor (`/pitches?open=<id>`) — pitch
+  attribute editing itself wasn't duplicated here.
+- Pitches.jsx list and Search Results both link into this page now
+  instead of the old direct entity links.
 
 ## Data model (draft)
 

@@ -206,7 +206,7 @@ export default function Pitches() {
       {visiblePitches.map((p) => (
         <div key={p.id} style={{ ...cardStyle, padding: "12px 16px", marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ fontWeight: 600 }}>{p.number}</div>
+            <Link to={`/units/${p.id}`} style={{ fontWeight: 600, color: colors.ink, textDecoration: "none" }}>{p.number}</Link>
             <div style={{ fontSize: "12px", color: colors.inkSoft }}>
               {p.area?.name} · {p.type?.name} · {p.status?.name}
               {p.band && ` · ${p.area?.code}-${p.band.code}`}
