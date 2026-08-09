@@ -26,7 +26,7 @@ export async function loadOperationalRows() {
     supabase.from("pitch").select("id, number, sort_key, area:area_id(name, code)"),
     supabase.from("placement").select("pitch_id, caravan_id").is("end_date", null),
     supabase.from("caravan").select("id, make, model, key_number, serial_number, for_sale"),
-    supabase.from("ownership").select("caravan_id, primary_customer_id").is("end_date", null),
+    supabase.from("ownership").select("caravan_id, primary_customer_id, secondary_customer_id").is("end_date", null),
     supabase.from("customer").select("id, customer1_first_name, customer1_surname, customer1_phone, customer1_email, customer2_first_name, customer2_surname"),
   ]);
 
@@ -34,6 +34,10 @@ export async function loadOperationalRows() {
   const customerById = new Map((customers || []).map((c) => [c.id, c]));
   const caravanIdByPitchId = new Map((placements || []).map((pl) => [pl.pitch_id, pl.caravan_id]));
   const customerIdByCaravanId = new Map((ownerships || []).map((o) => [o.caravan_id, o.primary_customer_id]));
+  // Secondary owner isn't shown in the table, only needed for CSV export
+  // (Andy: "Where there's multiple customers for one caravan please
+  // consolidate these into 1 row").
+  const secondaryCustomerIdByCaravanId = new Map((ownerships || []).map((o) => [o.caravan_id, o.secondary_customer_id]).filter(([, id]) => id));
 
   const rows = [];
   const sitedCaravanIds = new Set();
@@ -52,7 +56,8 @@ export async function loadOperationalRows() {
       const customer = customerId ? customerById.get(customerId) : null;
       if (caravanId) sitedCaravanIds.add(caravanId);
       if (customerId) linkedCustomerIds.add(customerId);
-      rows.push({ key: `pitch-${pitch.id}`, pitch, caravan, customer });
+      const secondaryCustomerId = caravanId ? secondaryCustomerIdByCaravanId.get(caravanId) || null : null;
+      rows.push({ key: `pitch-${pitch.id}`, pitch, caravan, customer, secondaryCustomerId });
     });
 
   // Off-park caravans and their owners still show up, just without a
@@ -62,7 +67,8 @@ export async function loadOperationalRows() {
     const customerId = customerIdByCaravanId.get(caravan.id);
     const customer = customerId ? customerById.get(customerId) : null;
     if (customerId) linkedCustomerIds.add(customerId);
-    rows.push({ key: `caravan-${caravan.id}`, pitch: null, caravan, customer });
+    const secondaryCustomerId = secondaryCustomerIdByCaravanId.get(caravan.id) || null;
+    rows.push({ key: `caravan-${caravan.id}`, pitch: null, caravan, customer, secondaryCustomerId });
   });
 
   (customers || []).forEach((customer) => {
@@ -71,4 +77,26 @@ export async function loadOperationalRows() {
   });
 
   return rows;
+}
+
+// Shared sort comparator for the Pitch/Customer/Caravan columns -- rows
+// with nothing in that column sort to the end regardless of direction,
+// so an ascending sort by Customer doesn't push every empty/off-park
+// row to the top.
+export function sortOperationalRows(rows, key, dir) {
+  const text = (r) => {
+    if (key === "pitch") return r.pitch?.number || null;
+    if (key === "customer") return customerName(r.customer);
+    if (key === "caravan") return caravanLabel(r.caravan);
+    return null;
+  };
+  const sign = dir === "desc" ? -1 : 1;
+  return [...rows].sort((a, b) => {
+    const ta = text(a);
+    const tb = text(b);
+    if (!ta && !tb) return 0;
+    if (!ta) return 1;
+    if (!tb) return -1;
+    return sign * ta.localeCompare(tb);
+  });
 }

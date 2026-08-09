@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { colors, fonts, buttonStyle } from "../lib/theme.js";
-import { loadOperationalRows } from "../lib/operationalRows.js";
+import { loadOperationalRows, sortOperationalRows } from "../lib/operationalRows.js";
+import { exportRowsToCsv } from "../lib/exportCsv.js";
 import OperationalTable from "../components/OperationalTable.jsx";
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 200, 250, 500];
@@ -18,22 +19,64 @@ export default function ParkList() {
   const [allRows, setAllRows] = useState(null);
   const [pageSize, setPageSize] = useState(250);
   const [page, setPage] = useState(1);
+  const [sortKey, setSortKey] = useState(null);
+  const [sortDir, setSortDir] = useState("asc");
+  const [selected, setSelected] = useState(new Set());
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     loadOperationalRows().then(setAllRows);
   }, []);
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil((allRows?.length || 0) / pageSize)), [allRows, pageSize]);
+  const sortedRows = useMemo(() => {
+    if (!allRows) return [];
+    return sortKey ? sortOperationalRows(allRows, sortKey, sortDir) : allRows;
+  }, [allRows, sortKey, sortDir]);
+
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(sortedRows.length / pageSize)), [sortedRows, pageSize]);
   const currentPage = Math.min(page, totalPages);
 
   const pageRows = useMemo(() => {
-    if (!allRows) return [];
     const start = (currentPage - 1) * pageSize;
-    return allRows.slice(start, start + pageSize);
-  }, [allRows, currentPage, pageSize]);
+    return sortedRows.slice(start, start + pageSize);
+  }, [sortedRows, currentPage, pageSize]);
 
   function goTo(p) {
     setPage(Math.min(Math.max(p, 1), totalPages));
+  }
+
+  function handleSort(key) {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir("asc");
+    } else if (sortDir === "asc") {
+      setSortDir("desc");
+    } else {
+      setSortKey(null);
+    }
+    setPage(1);
+  }
+
+  function toggleRow(key) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  // Selects/clears every row on the current page -- not every row
+  // across all pages, so it stays predictable as page size changes.
+  function toggleAll() {
+    setSelected((prev) => (pageRows.every((r) => prev.has(r.key)) ? new Set() : new Set([...prev, ...pageRows.map((r) => r.key)])));
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    const selectedRows = sortedRows.filter((r) => selected.has(r.key));
+    await exportRowsToCsv(selectedRows, "parkman2-park-list.csv");
+    setExporting(false);
   }
 
   // Small park, small page counts today, but window the buttons rather
@@ -52,8 +95,8 @@ export default function ParkList() {
     );
   }
 
-  const from = allRows.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const to = Math.min(currentPage * pageSize, allRows.length);
+  const from = sortedRows.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const to = Math.min(currentPage * pageSize, sortedRows.length);
 
   return (
     <div style={{ padding: "24px", maxWidth: "980px", margin: "0 auto" }}>
@@ -87,10 +130,28 @@ export default function ParkList() {
         </div>
       </div>
 
-      <OperationalTable rows={pageRows} />
+      {selected.size > 0 && (
+        <div style={{ marginBottom: "12px" }}>
+          <button onClick={handleExport} disabled={exporting} style={buttonStyle.secondary}>
+            {exporting ? "Exporting…" : `Export ${selected.size} selected to CSV`}
+          </button>
+        </div>
+      )}
+
+      <OperationalTable
+        rows={pageRows}
+        originPath="/park-list"
+        originLabel="Park list"
+        sortKey={sortKey}
+        sortDir={sortDir}
+        onSort={handleSort}
+        selected={selected}
+        onToggleRow={toggleRow}
+        onToggleAll={toggleAll}
+      />
 
       <p style={{ color: colors.inkSoft, fontSize: "12.5px", textAlign: "center", marginTop: "14px" }}>
-        Showing {from} to {to} of {allRows.length}
+        Showing {from} to {to} of {sortedRows.length}
       </p>
     </div>
   );

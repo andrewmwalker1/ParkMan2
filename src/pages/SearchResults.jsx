@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { colors, fonts } from "../lib/theme.js";
-import { loadOperationalRows } from "../lib/operationalRows.js";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
+import { colors, fonts, buttonStyle } from "../lib/theme.js";
+import { loadOperationalRows, sortOperationalRows } from "../lib/operationalRows.js";
+import { exportRowsToCsv } from "../lib/exportCsv.js";
 import OperationalTable from "../components/OperationalTable.jsx";
 
 function rowMatches(row, needle) {
@@ -28,15 +29,28 @@ const FILTERS = {
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const q = searchParams.get("q") || "";
   const filterKey = searchParams.get("filter");
   const filter = filterKey && FILTERS[filterKey] ? FILTERS[filterKey] : null;
   const [allRows, setAllRows] = useState(null);
+  const [sortKey, setSortKey] = useState(null);
+  const [sortDir, setSortDir] = useState("asc");
+  const [selected, setSelected] = useState(new Set());
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     setAllRows(null);
+    setSelected(new Set());
     loadOperationalRows().then(setAllRows);
   }, [q, filterKey]);
+
+  const rows = useMemo(() => {
+    if (!allRows) return [];
+    const needle = q.trim().toLowerCase();
+    const matched = filter ? allRows.filter(filter.test) : needle ? allRows.filter((r) => rowMatches(r, needle)) : [];
+    return sortKey ? sortOperationalRows(matched, sortKey, sortDir) : matched;
+  }, [allRows, q, filter, sortKey, sortDir]);
 
   if (!allRows) {
     return (
@@ -46,8 +60,36 @@ export default function SearchResults() {
     );
   }
 
-  const needle = q.trim().toLowerCase();
-  const rows = filter ? allRows.filter(filter.test) : needle ? allRows.filter((r) => rowMatches(r, needle)) : [];
+  function handleSort(key) {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir("asc");
+    } else if (sortDir === "asc") {
+      setSortDir("desc");
+    } else {
+      setSortKey(null);
+    }
+  }
+
+  function toggleRow(key) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelected((prev) => (rows.every((r) => prev.has(r.key)) ? new Set() : new Set(rows.map((r) => r.key))));
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    const selectedRows = rows.filter((r) => selected.has(r.key));
+    await exportRowsToCsv(selectedRows, "parkman2-search-results.csv");
+    setExporting(false);
+  }
 
   return (
     <div style={{ padding: "24px", maxWidth: "980px", margin: "0 auto" }}>
@@ -63,7 +105,26 @@ export default function SearchResults() {
       {rows.length === 0 ? (
         <p style={{ color: colors.inkSoft }}>{filter ? "No matches." : `No matches for "${q}".`}</p>
       ) : (
-        <OperationalTable rows={rows} />
+        <>
+          {selected.size > 0 && (
+            <div style={{ marginBottom: "12px" }}>
+              <button onClick={handleExport} disabled={exporting} style={buttonStyle.secondary}>
+                {exporting ? "Exporting…" : `Export ${selected.size} selected to CSV`}
+              </button>
+            </div>
+          )}
+          <OperationalTable
+            rows={rows}
+            originPath={`${location.pathname}${location.search}`}
+            originLabel={filter ? filter.title : "Search results"}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            onSort={handleSort}
+            selected={selected}
+            onToggleRow={toggleRow}
+            onToggleAll={toggleAll}
+          />
+        </>
       )}
     </div>
   );

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 import AddressFields from "./admin/AddressFields.jsx";
+import NotesSection from "../components/NotesSection.jsx";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
 const fieldStyle = {
@@ -35,8 +36,6 @@ export default function CustomerDetail() {
   const { profile } = useAuth();
 
   const [form, setForm] = useState(isNew ? blank : null);
-  const [notes, setNotes] = useState([]);
-  const [newNote, setNewNote] = useState("");
   const [status, setStatus] = useState("idle"); // idle | saving | saved | error
   const [error, setError] = useState(null);
 
@@ -52,18 +51,7 @@ export default function CustomerDetail() {
       if (err) setError(err.message);
       else setForm(data);
     });
-    refreshNotes();
   }, [id]);
-
-  function refreshNotes() {
-    if (isNew) return;
-    supabase
-      .from("customer_note")
-      .select("id, text, created_at, actor:actor_profile_id(display_name)")
-      .eq("customer_id", id)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setNotes(data || []));
-  }
 
   async function handleSave(e) {
     e.preventDefault();
@@ -89,21 +77,6 @@ export default function CustomerDetail() {
       return;
     }
     setStatus("saved");
-  }
-
-  async function handleAddNote() {
-    if (!newNote.trim()) return;
-    const { error: err } = await supabase.from("customer_note").insert({
-      customer_id: id,
-      text: newNote.trim(),
-      actor_profile_id: profile.id,
-    });
-    if (err) {
-      setError(err.message);
-      return;
-    }
-    setNewNote("");
-    refreshNotes();
   }
 
   async function handleDelete() {
@@ -216,20 +189,7 @@ export default function CustomerDetail() {
 
       {!isNew && (
         <div style={{ ...cardStyle, padding: "20px 24px" }}>
-          <div style={sectionLabelStyle}>Notes</div>
-          <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-            <input value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Add a note…" style={{ ...fieldStyle, marginBottom: 0, flex: 1 }} />
-            <button type="button" onClick={handleAddNote} style={buttonStyle.secondary}>Add</button>
-          </div>
-          {notes.map((n) => (
-            <div key={n.id} style={{ padding: "8px 0", borderBottom: `1px solid ${colors.line}` }}>
-              <div style={{ fontSize: "12px", color: colors.inkSoft }}>
-                <strong style={{ color: colors.ink, fontWeight: 500 }}>{n.actor?.display_name}</strong> · {new Date(n.created_at).toLocaleString()}
-              </div>
-              <div style={{ fontSize: "13px", color: colors.ink }}>{n.text}</div>
-            </div>
-          ))}
-          {notes.length === 0 && <p style={{ color: colors.inkSoft, fontSize: "13px" }}>No notes yet.</p>}
+          <NotesSection table="customer_note" idColumn="customer_id" id={id} />
         </div>
       )}
     </div>

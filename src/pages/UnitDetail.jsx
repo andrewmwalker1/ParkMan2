@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient.js";
 import { suggestSortKey } from "../lib/sortKey.js";
+import NotesSection from "../components/NotesSection.jsx";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
 const fieldStyle = {
@@ -189,6 +190,8 @@ function CustomerCard({ title, customer, onSave, onAssign, onRemove, blockedReas
           </div>
         </form>
       )}
+
+      {customer && <NotesSection table="customer_note" idColumn="customer_id" id={customer.id} />}
     </div>
   );
 }
@@ -196,7 +199,13 @@ function CustomerCard({ title, customer, onSave, onAssign, onRemove, blockedReas
 export default function UnitDetail() {
   const { pitchId } = useParams();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const initialTab = searchParams.get("tab");
+  // Every entry point (OperationalTable, Pitches.jsx) passes where it
+  // came from via router state, so "← Back" actually returns you to the
+  // list you were just on (Park list, Search results, or Pitches)
+  // instead of always assuming Pitches.
+  const origin = location.state?.originPath ? location.state : { originPath: "/pitches", originLabel: "Pitches" };
 
   const [tab, setTab] = useState(["customer", "caravan", "pitch"].includes(initialTab) ? initialTab : "customer");
   const [pitch, setPitch] = useState(null);
@@ -422,7 +431,7 @@ export default function UnitDetail() {
 
   return (
     <div style={{ padding: "24px", maxWidth: "620px", margin: "0 auto" }}>
-      <Link to="/pitches" style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back to Pitches</Link>
+      <Link to={origin.originPath} style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back to {origin.originLabel}</Link>
       <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "8px 0 4px" }}>{pitch.number}</h1>
       <p style={{ color: colors.inkSoft, margin: "0 0 16px", fontSize: "13px" }}>{pitch.area?.name}</p>
 
@@ -504,6 +513,7 @@ export default function UnitDetail() {
               </div>
             </form>
           )}
+          {caravan && <NotesSection table="caravan_note" idColumn="caravan_id" id={caravan.id} />}
         </div>
       )}
 
@@ -569,6 +579,7 @@ export default function UnitDetail() {
             {pitchStatus === "saved" && <p style={{ color: colors.success, fontSize: "13px" }}>Saved.</p>}
             <button type="submit" disabled={pitchStatus === "saving"} style={buttonStyle.primary}>{pitchStatus === "saving" ? "Saving…" : "Save changes"}</button>
           </form>
+          <NotesSection table="pitch_note" idColumn="pitch_id" id={pitchId} />
         </div>
       )}
     </div>

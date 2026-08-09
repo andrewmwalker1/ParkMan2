@@ -315,6 +315,47 @@ both remain valid ways in. One real bug caught before shipping: calling
 vanished — fixed by only resetting status on `pitchId` change (its own
 effect), never inside `refresh()` itself.
 
+## Origin-aware back-link, sortable/selectable operational table, CSV export, and notes (9 Aug 2026)
+
+Andy's bundled request this session: fix the Unit page's back-link,
+make Park list/Search results sortable and selectable with CSV export,
+and wire up notes on Customer/Caravan/Pitch.
+
+- **Back-link context.** The Unit page always said "← Back to
+  Pitches" regardless of where you actually came from. `OperationalTable`
+  now stamps `{ originPath, originLabel }` onto each row link's router
+  `state`, and `UnitDetail.jsx` reads `location.state` (falling back to
+  `{ originPath: "/pitches", originLabel: "Pitches" }` for any entry
+  point that doesn't pass it, e.g. Pitches.jsx's own list). So the arrow
+  now correctly reads "Back to Park list", "Back to Occupied pitches",
+  "Back to Search results", etc.
+- **Sortable columns.** Clicking Pitch/Customer/Caravan headers cycles
+  asc → desc → unsorted. `sortOperationalRows()` (in
+  `operationalRows.js`) is the shared comparator — empty cells always
+  sort to the end regardless of direction. On Park list, sorting runs on
+  the full row set *before* pagination slices it, not just the visible
+  page.
+- **Selection + CSV export.** Checkboxes per row plus a header
+  "select all" (Search results: all matching rows; Park list: all rows
+  on the current page). Selected rows export via
+  `exportRowsToCsv()` (`src/lib/exportCsv.js`), which re-fetches full
+  Pitch/Caravan/Customer records for exactly the selected IDs and
+  flattens every field from all three tables into one CSV row. Where a
+  caravan has both a primary and secondary owner, both are flattened
+  onto the same row (`Customer ...` / `Secondary Customer ...` column
+  pairs) rather than exporting two rows, per Andy's ask.
+- **Notes.** `customer_note` and `pitch_note` already existed in the
+  schema with RLS in place; `caravan_note` was the missing one, added in
+  `supabase/16-caravan-notes.sql` with the same shape and an RLS policy
+  scoped through `caravan.business_id` directly (caravan has its own
+  `business_id` column, unlike pitch which only gets one via
+  area → park → business). One shared `NotesSection` component
+  (`table`/`idColumn`/`id` props) now renders an append-only notes log
+  on: the Pitch tab, the Caravan tab, each populated Customer card
+  (Primary and Secondary independently) on the Unit page, and
+  `CustomerDetail.jsx` (refactored from its own inline implementation to
+  reuse the shared component).
+
 ## Data model (draft)
 
 Confirmed so far (Andy's own description, 6 Aug 2026):
