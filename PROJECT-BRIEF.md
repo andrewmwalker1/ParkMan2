@@ -470,6 +470,46 @@ a Role dropdown per user (any signed-in user can currently reassign
 anyone's role, same open-access model as the rest of Admin — Andy only
 asked to gate invoice *editing*, not user/role management itself).
 
+### Milestone 4 — Invoice schema + CRUD UI with live VAT calculation
+
+Added `invoice` (`pitch_id` required, not `customer_id` — confirmed with
+Andy that Sage's "Customer Reference" is always the Pitch number,
+ground-rent style, so the account persists regardless of who currently
+owns the caravan on it) and `invoice_line`. `bill_to_name`/`bill_to_address`
+are snapshotted onto the invoice at creation time rather than living-joined
+from Customer, for the same reason Ownership/Placement are append-only
+history: a printed invoice from 2 years ago must still show who it was
+actually billed to at the time, not whoever owns the pitch's caravan
+today.
+
+New `src/lib/invoiceMath.js` (`calcFromNet`/`calcFromGross`/`sumLines`)
+implements exactly the behaviour Andy asked for: editing a line's Net
+recalculates VAT+Gross, editing Gross recalculates Net+VAT — VAT itself is
+always derived, never typed directly. `InvoiceDetail.jsx` handles create
+(`/invoices/new`, optionally pre-filled via `?pitch=<id>` — the Unit
+page's Pitch tab now has a "+ Create invoice for this pitch" link) and
+edit/view (`/invoices/:id`) in one component; `Invoices.jsx` is the list.
+Picking a pitch for a brand-new invoice auto-fills Bill To from that
+pitch's current owner (same Pitch→Placement→Caravan→Ownership→Customer
+chain `UnitDetail.jsx` already walks), editable afterwards.
+
+**RLS bug caught while verifying, before shipping**: the first version of
+the `invoice_line` insert policy tried to detect "is this the initial
+batch of lines for a brand-new invoice" by querying `invoice_line` from
+within its own policy — Postgres rejects any RLS policy that references
+its own table like that with "infinite recursion detected in policy".
+Worse, it surfaced as a **partial failure**: the `invoice` header insert
+succeeded (since that policy didn't have the bug), and only the follow-up
+`invoice_line` insert failed, leaving an orphaned invoice header with a
+total that didn't match its (zero) actual lines. Redesigned around a
+cleaner rule that avoids the self-reference entirely and doesn't need
+Milestone 3's "created it in the last batch" hack: **draft invoices are
+freely editable by anyone** (not yet a real financial document); once
+**issued or void**, editing (the invoice header, and inserting/updating/
+deleting its lines) requires `can_edit_invoices`. Viewing and creating
+stay open to everyone regardless of status. This is also just a better
+rule than the original plan, not merely a workaround.
+
 ## Data model (draft)
 
 Confirmed so far (Andy's own description, 6 Aug 2026):

@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: "/pitches", label: "Pitches" },
   { to: "/customers", label: "Customers" },
   { to: "/caravans", label: "Caravans" },
+  { to: "/invoices", label: "Invoices" },
   { to: "/admin", label: "Admin" },
 ];
 

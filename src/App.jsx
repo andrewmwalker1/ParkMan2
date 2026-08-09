@@ -12,6 +12,8 @@ import Caravans from "./pages/Caravans.jsx";
 import CaravanDetail from "./pages/CaravanDetail.jsx";
 import SearchResults from "./pages/SearchResults.jsx";
 import UnitDetail from "./pages/UnitDetail.jsx";
+import Invoices from "./pages/Invoices.jsx";
+import InvoiceDetail from "./pages/InvoiceDetail.jsx";
 import { colors, pageStyle } from "./lib/theme.js";
 
 function AppShell() {
@@ -51,6 +53,9 @@ function AppShell() {
           <Route path="/caravans/:id" element={<CaravanDetail />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/units/:pitchId" element={<UnitDetail />} />
+          <Route path="/invoices" element={<Invoices />} />
+          <Route path="/invoices/new" element={<InvoiceDetail />} />
+          <Route path="/invoices/:id" element={<InvoiceDetail />} />
         </Routes>
       </Layout>
     </div>

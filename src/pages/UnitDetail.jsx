@@ -667,7 +667,10 @@ export default function UnitDetail() {
             </div>
 
             {pitchStatus === "saved" && <p style={{ color: colors.success, fontSize: "13px" }}>Saved.</p>}
-            <button type="submit" disabled={pitchStatus === "saving"} style={buttonStyle.primary}>{pitchStatus === "saving" ? "Saving…" : "Save changes"}</button>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <button type="submit" disabled={pitchStatus === "saving"} style={buttonStyle.primary}>{pitchStatus === "saving" ? "Saving…" : "Save changes"}</button>
+              <Link to={`/invoices/new?pitch=${pitchId}`} style={smallLinkStyle}>+ Create invoice for this pitch →</Link>
+            </div>
           </form>
           <NotesSection table="pitch_note" idColumn="pitch_id" id={pitchId} />
         </div>
