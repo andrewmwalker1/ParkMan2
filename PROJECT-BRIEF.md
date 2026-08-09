@@ -374,6 +374,66 @@ that's already sited also gets an "Unsite" button (end-dates its
 Placement, same pattern as removing a secondary owner) — the caravan and
 its Ownership/owner are untouched, it just goes back to off-park.
 
+## 2026 pitch band rates + invoicing (in progress, 9 Aug 2026)
+
+Andy needs pitch bands rated and applied before pitch-fee invoicing can
+start for the 2026 season, then a full invoicing system (nominal codes,
+VAT rates, invoices/invoice lines with live net↔gross calculation, a
+branded print view, and a Sage Accounting CSV export). Plan agreed and
+being delivered as a sequence of shippable milestones — see the plan file
+from that session for full detail; this brief gets one dated entry per
+milestone as it ships. Key decisions locked in during planning:
+
+- **Sage's "Customer Reference" is always the Pitch number** (ground-rent
+  style — the account persists regardless of who currently owns the
+  caravan on it), confirmed with Andy. Every invoice is tied to a Pitch,
+  not directly to a free-floating Customer.
+- **Roles**: reusing the shape already documented above under "Multi-park
+  staff access control" — a data-driven `role` lookup + `role_permission`
+  (named permission keys, presence = granted), matching the Maintenance
+  app's `role_permissions` pattern ahead of that eventual merge. Only the
+  one permission needed today (`can_edit_invoices`) is wired up.
+- **Printing only for now, no emailing** — native browser print-to-PDF
+  with `@media print` CSS, no new dependency. Emailing needs server-side
+  PDF generation + an email service, which Andy wants built together with
+  the future batch-invoicing/queueing system rather than bolted on now.
+
+### Milestone 1 — 2026 pitch bands + rates, applied to pitches
+
+Added `pitch_band_rate` (`pitch_band_id, year, annual_fee`) — separate
+from `pitch_band` itself since a band's rate changes every season while
+the band (its area, its code) doesn't. `PitchBandsTab.jsx` now shows/edits
+an annual fee inline per band (no year-picker yet — one season's rates
+exist at a time).
+
+Andy supplied `Pitch Bands 2026.docx` (band → rate) and `Pitch Fee Data
+for PM2.xlsx` (pitch → band). Neither pandoc nor Python is available in
+this environment, so both binary Office files were parsed once via
+`unzip` + a throwaway Node script (they're zips of XML under the hood) and
+the extracted values embedded directly in `scripts/import-2026-pitch-bands.mjs`
+— not re-parsed at run time. That script upserts all 25 bands (across the
+4 Areas) with their 2026 rate, then applies a band to every pitch the
+xlsx mapped, normalizing the xlsx's zero-padded pitch numbers (`OM-L01`)
+to ParkMan2's actual stored form (`OM-L1`).
+
+**Result**: 176 of 177 xlsx rows matched. The one exception — `OP-B3` —
+doesn't exist as a pitch in ParkMan2 at all (pitch numbers jump from
+`OP-B1` to `OP-B5`); flagged to Andy rather than guessed at. The 31 DB
+pitches left with no band are exactly the known vacant/off-list ones
+(`STORE`, `YH-F4`, etc. — the same set surfaced by the Dashboard's "Empty
+pitches" filter), which is expected: the xlsx only lists pitches that
+were actually being charged.
+
+One bug caught and fixed while verifying: `pitch_band.code` is stored
+**without** the area prefix (e.g. `"Band 1a"`, not `"OP-Band 1a"`) — the
+admin screen concatenates `area.code + "-" + code` for display, matching
+its own "e.g. Band 4" placeholder. The import script's first pass stored
+the full self-prefixed label from the source docs instead, which rendered
+as `"OM-OM-Band 3"`; fixed by stripping the area prefix before storing
+(the docx/xlsx's full labels are still used as the join key between the
+two data sets, just not as the stored `code`), and the resulting
+duplicate rows from the first run were deleted.
+
 ## Data model (draft)
 
 Confirmed so far (Andy's own description, 6 Aug 2026):

@@ -14,12 +14,18 @@ const fieldStyle = {
 };
 
 const labelStyle = { display: "block", fontSize: "12px", color: colors.inkSoft, marginBottom: "4px" };
-const blank = { id: null, code: "", area_id: "" };
+const blank = { id: null, code: "", area_id: "", annual_fee: "" };
+
+const currency = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" });
 
 export default function PitchBandsTab() {
   const { profile } = useAuth();
   const [bands, setBands] = useState([]);
   const [areas, setAreas] = useState([]);
+  const [rateByBandId, setRateByBandId] = useState({});
+  // No year picker yet (Phase 1, one season's rates exist at a time) --
+  // shows/edits whichever year is most recently set, per band.
+  const [year, setYear] = useState(new Date().getFullYear());
   const [form, setForm] = useState(null);
   const [error, setError] = useState(null);
 
@@ -27,10 +33,16 @@ export default function PitchBandsTab() {
     Promise.all([
       supabase.from("pitch_band").select("id, code, area_id, area:area_id(name, code)").order("code"),
       supabase.from("area").select("id, name, code").order("name"),
-    ]).then(([{ data: b, error: err }, { data: a }]) => {
+      supabase.from("pitch_band_rate").select("pitch_band_id, year, annual_fee"),
+    ]).then(([{ data: b, error: err }, { data: a }, { data: r }]) => {
       if (err) setError(err.message);
       else setBands(b || []);
       setAreas(a || []);
+      const rates = r || [];
+      if (rates.length) setYear(Math.max(...rates.map((x) => x.year)));
+      const map = {};
+      rates.forEach((x) => { map[x.pitch_band_id] = x; });
+      setRateByBandId(map);
     });
   }
 
@@ -40,12 +52,21 @@ export default function PitchBandsTab() {
     e.preventDefault();
     setError(null);
     const payload = { code: form.code, area_id: form.area_id };
-    const { error: err } = form.id
-      ? await supabase.from("pitch_band").update(payload).eq("id", form.id)
-      : await supabase.from("pitch_band").insert(payload);
+    const { data: saved, error: err } = form.id
+      ? await supabase.from("pitch_band").update(payload).eq("id", form.id).select("id").single()
+      : await supabase.from("pitch_band").insert(payload).select("id").single();
     if (err) {
       setError(err.message);
       return;
+    }
+    if (form.annual_fee !== "") {
+      const { error: rateErr } = await supabase
+        .from("pitch_band_rate")
+        .upsert({ pitch_band_id: saved.id, year, annual_fee: Number(form.annual_fee) }, { onConflict: "pitch_band_id,year" });
+      if (rateErr) {
+        setError(rateErr.message);
+        return;
+      }
     }
     setForm(null);
     refresh();
@@ -70,7 +91,7 @@ export default function PitchBandsTab() {
         </button>
       </div>
       <p style={{ fontSize: "13px", color: colors.inkSoft, marginTop: 0 }}>
-        Pricing tiers within an Area (e.g. "PN-Band 4"). Pricing itself isn't built yet — this is just the reference list Pitches assign to.
+        Pricing tiers within an Area (e.g. "PN-Band 4"), with an annual rate per season.
       </p>
       {areas.length === 0 && <p style={{ fontSize: "13px", color: colors.inkSoft }}>Add an Area first.</p>}
       {error && <p style={{ color: colors.immediate, fontSize: "13px" }}>{error}</p>}
@@ -79,10 +100,13 @@ export default function PitchBandsTab() {
         <div key={b.id} style={{ ...cardStyle, padding: "12px 16px", marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ fontWeight: 600 }}>{b.area?.code}-{b.code}</div>
-            <div style={{ fontSize: "12px", color: colors.inkSoft }}>{b.area?.name}</div>
+            <div style={{ fontSize: "12px", color: colors.inkSoft }}>
+              {b.area?.name}
+              {rateByBandId[b.id] && <> · {currency.format(rateByBandId[b.id].annual_fee)} ({rateByBandId[b.id].year})</>}
+            </div>
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
-            <button onClick={() => { setError(null); setForm({ id: b.id, code: b.code, area_id: b.area_id }); }} style={buttonStyle.secondary}>Edit</button>
+            <button onClick={() => { setError(null); setForm({ id: b.id, code: b.code, area_id: b.area_id, annual_fee: rateByBandId[b.id]?.annual_fee ?? "" }); }} style={buttonStyle.secondary}>Edit</button>
             <button onClick={() => handleDelete(b.id)} style={{ ...buttonStyle.secondary, color: colors.immediate }}>Delete</button>
           </div>
         </div>
@@ -103,6 +127,9 @@ export default function PitchBandsTab() {
 
               <label style={labelStyle}>Band code</label>
               <input required value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="e.g. Band 4" style={fieldStyle} />
+
+              <label style={labelStyle}>Annual fee ({year})</label>
+              <input type="number" step="0.01" min="0" value={form.annual_fee} onChange={(e) => setForm({ ...form, annual_fee: e.target.value })} placeholder="e.g. 4350.00" style={fieldStyle} />
 
               {error && <p style={{ color: colors.immediate, fontSize: "13px" }}>{error}</p>}
               <div style={{ display: "flex", gap: "8px" }}>
