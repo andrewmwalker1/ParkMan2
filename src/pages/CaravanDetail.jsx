@@ -24,7 +24,7 @@ const blank = {
   length: "", width: "", bedrooms: "", berths: "",
   key_number: "",
   pat_test_expiry: "", gas_test_expiry: "",
-  condition: "",
+  condition: "", for_sale: false,
 };
 
 // A test date within 60 days (or already past) is worth calling out --
@@ -115,6 +115,7 @@ export default function CaravanDetail() {
       bedrooms: form.bedrooms === "" ? null : Number(form.bedrooms),
       berths: form.berths === "" ? null : Number(form.berths),
       key_number: form.key_number,
+      for_sale: !!form.for_sale,
       pat_test_expiry: form.pat_test_expiry || null,
       gas_test_expiry: form.gas_test_expiry || null,
       condition: form.condition,
@@ -204,6 +205,10 @@ export default function CaravanDetail() {
               <input value={form.condition || ""} onChange={(e) => setForm({ ...form, condition: e.target.value })} placeholder="e.g. New, Used" style={fieldStyle} />
             </div>
           </div>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: colors.inkSoft, marginTop: "4px" }}>
+            <input type="checkbox" checked={!!form.for_sale} onChange={(e) => setForm({ ...form, for_sale: e.target.checked })} />
+            For sale
+          </label>
         </div>
 
         <div style={{ ...cardStyle, padding: "20px 24px", marginBottom: "16px" }}>

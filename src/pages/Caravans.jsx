@@ -21,7 +21,7 @@ export default function Caravans() {
   useEffect(() => {
     supabase
       .from("caravan")
-      .select("id, make, model, colour, key_number, serial_number, type:type_id(name), status:status_id(name)")
+      .select("id, make, model, colour, key_number, serial_number, for_sale, type:type_id(name), status:status_id(name)")
       .order("make")
       .then(({ data, error: err }) => {
         if (err) setError(err.message);
@@ -61,7 +61,14 @@ export default function Caravans() {
           style={{ ...cardStyle, padding: "12px 16px", marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", textDecoration: "none", color: "inherit" }}
         >
           <div>
-            <div style={{ fontWeight: 600 }}>{c.make} {c.model}</div>
+            <div style={{ fontWeight: 600 }}>
+              {c.make} {c.model}
+              {c.for_sale && (
+                <span style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 600, color: colors.moss, background: "#EAF3DE", padding: "2px 8px", borderRadius: "999px" }}>
+                  For sale
+                </span>
+              )}
+            </div>
             <div style={{ fontSize: "12px", color: colors.inkSoft }}>
               {[c.colour, c.type?.name, c.status?.name].filter(Boolean).join(" · ")}
             </div>

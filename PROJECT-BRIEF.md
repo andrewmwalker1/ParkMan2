@@ -862,6 +862,22 @@ Grounded against the same real CampManager "Unit Summary" printout.
   tells us. Status stays scoped to genuine ownership/occupancy type
   (Private/Rental/Residential-style values), not location — avoiding the
   exact two-places-to-update problem CampManager has.
+  **Corrected (9 Aug 2026):** the "Stock Unit = Display placement"
+  resolution above turned out to be too narrow — Andy: caravans are
+  often sold while still sited on their normal pitch, not moved to a
+  dedicated Display area at all, so location alone can't tell you
+  "for sale." See the new **`for_sale`** field below, which replaces
+  that assumption. Also: when Andy first populated the Status lookup
+  himself, he used it for New/Used — that's actually Condition's job,
+  not Status's; worth keeping the two straight (Status = occupancy
+  type, Condition = New/Used) since Condition being a plain text field
+  rather than a dropdown likely nudged him toward the wrong one.
+- **`for_sale` (boolean, new 9 Aug 2026)** — an explicit flag, not
+  derived from "no current Ownership row" as originally assumed. Andy:
+  a sold-but-not-yet-processed caravan would also show no current
+  owner without being for sale, so that proxy isn't reliable enough
+  for its actual purpose — producing a **stock sheet** in future.
+  Independent of both Status and Placement.
 - **Condition — resolved (7 Aug 2026): keep it, Tree Tops should
   actually be using it.** One real wrinkle: a caravan stops being "New"
   the moment it's sold for the first time, so something needs to update
