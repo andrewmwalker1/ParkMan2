@@ -86,6 +86,62 @@ function CustomerPicker({ onPick }) {
   );
 }
 
+// Search-existing-caravan picker used to site a caravan on this pitch --
+// creating a brand new caravan still happens on the full Caravans screen.
+// Shows where a matched caravan currently sits (if anywhere), since
+// picking one already sited elsewhere moves it here rather than being
+// blocked -- caravans do move pitches (see PROJECT-BRIEF.md).
+function CaravanPicker({ onPick }) {
+  const [query, setQuery] = useState("");
+  const [all, setAll] = useState(null);
+  const [locations, setLocations] = useState({});
+
+  useEffect(() => {
+    supabase
+      .from("caravan")
+      .select("id, make, model, key_number, serial_number")
+      .then(({ data }) => setAll(data || []));
+    supabase
+      .from("placement")
+      .select("caravan_id, pitch:pitch_id(number)")
+      .is("end_date", null)
+      .then(({ data }) => {
+        const map = {};
+        (data || []).forEach((p) => {
+          if (p.pitch) map[p.caravan_id] = p.pitch.number;
+        });
+        setLocations(map);
+      });
+  }, []);
+
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q || !all) return [];
+    return all
+      .filter((c) => [c.make, c.model, c.key_number, c.serial_number].filter(Boolean).some((v) => v.toLowerCase().includes(q)))
+      .slice(0, 8);
+  }, [query, all]);
+
+  return (
+    <div>
+      <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search existing caravans by make, model, or key number…" style={fieldStyle} />
+      {matches.map((c) => (
+        <div
+          key={c.id}
+          onClick={() => onPick(c.id, locations[c.id])}
+          style={{ ...cardStyle, padding: "8px 12px", marginBottom: "6px", cursor: "pointer", fontSize: "13.5px" }}
+        >
+          {c.make} {c.model}
+          {c.key_number && <span style={{ color: colors.inkSoft }}> · {c.key_number}</span>}
+          {locations[c.id] && <span style={{ color: colors.immediate }}> · currently on {locations[c.id]}</span>}
+        </div>
+      ))}
+      {query.trim() && all && matches.length === 0 && <p style={{ fontSize: "13px", color: colors.inkSoft }}>No matches.</p>}
+      <Link to="/caravans/new" style={smallLinkStyle}>+ Create a new caravan →</Link>
+    </div>
+  );
+}
+
 // One card for Primary or Secondary owner. Manages its own edit-form
 // state locally (customer1/2 name+phone+email only -- address/NOK/notes
 // stay on the full Customer record, reached via the link at the
@@ -218,6 +274,7 @@ export default function UnitDetail() {
   const [caravan, setCaravan] = useState(null);
   const [caravanForm, setCaravanForm] = useState(null);
   const [caravanStatus, setCaravanStatus] = useState("idle");
+  const [pickingCaravan, setPickingCaravan] = useState(false);
   const [ownership, setOwnership] = useState(null);
   const [primaryCustomer, setPrimaryCustomer] = useState(null);
   const [secondaryCustomer, setSecondaryCustomer] = useState(null);
@@ -307,6 +364,7 @@ export default function UnitDetail() {
 
   useEffect(refresh, [pitchId]);
   useEffect(() => setPitchStatus("idle"), [pitchId]);
+  useEffect(() => setPickingCaravan(false), [pitchId]);
 
   // Number stores the area prefix directly (see PROJECT-BRIEF.md), so
   // switching Area mid-edit swaps the prefix in place -- same logic as
@@ -419,6 +477,28 @@ export default function UnitDetail() {
     else refresh();
   }
 
+  // Sites caravanId on this pitch. If it's currently sited elsewhere
+  // (currentPitchNumber, shown to the user in CaravanPicker before they
+  // pick), that placement is end-dated first -- a caravan can only be
+  // on one pitch at a time, so picking one moves it rather than being
+  // blocked.
+  async function assignCaravan(caravanId) {
+    setError(null);
+    const today = new Date().toISOString().slice(0, 10);
+    await supabase.from("placement").update({ end_date: today }).eq("caravan_id", caravanId).is("end_date", null);
+    const { error: err } = await supabase.from("placement").insert({ pitch_id: pitchId, caravan_id: caravanId, start_date: today });
+    if (err) setError(err.message);
+    else refresh();
+  }
+
+  async function removeCaravan() {
+    if (!caravan) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const { error: err } = await supabase.from("placement").update({ end_date: today }).eq("pitch_id", pitchId).is("end_date", null);
+    if (err) setError(err.message);
+    else refresh();
+  }
+
   if (!pitch) return <p style={{ padding: "24px", color: colors.inkSoft }}>Loading…</p>;
 
   const bandsForArea = pitchForm ? bands.filter((b) => b.area_id === pitchForm.area_id) : [];
@@ -485,10 +565,19 @@ export default function UnitDetail() {
       {tab === "caravan" && (
         <div style={{ ...cardStyle, padding: "20px 24px", marginBottom: "16px" }}>
           <div style={sectionLabelStyle}>Caravan</div>
-          {!caravan && (
-            <p style={{ fontSize: "13px", color: colors.inkSoft }}>
-              No caravan currently sited on this pitch. Site one from the <Link to="/caravans" style={smallLinkStyle}>Caravans screen</Link>.
-            </p>
+          {!caravan && !pickingCaravan && (
+            <>
+              <p style={{ fontSize: "13px", color: colors.inkSoft }}>No caravan currently sited on this pitch.</p>
+              <button type="button" onClick={() => setPickingCaravan(true)} style={buttonStyle.secondary}>+ Assign caravan</button>
+            </>
+          )}
+          {!caravan && pickingCaravan && (
+            <CaravanPicker
+              onPick={(id) => {
+                setPickingCaravan(false);
+                assignCaravan(id);
+              }}
+            />
           )}
           {caravan && caravanForm && (
             <form onSubmit={handleSaveCaravan}>
@@ -510,6 +599,7 @@ export default function UnitDetail() {
               <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 <button type="submit" disabled={caravanStatus === "saving"} style={buttonStyle.primary}>{caravanStatus === "saving" ? "Saving…" : "Save changes"}</button>
                 <Link to={`/caravans/${caravan.id}`} style={smallLinkStyle}>Full caravan record →</Link>
+                <button type="button" onClick={removeCaravan} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Unsite</button>
               </div>
             </form>
           )}

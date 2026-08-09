@@ -356,6 +356,24 @@ and wire up notes on Customer/Caravan/Pitch.
   `CustomerDetail.jsx` (refactored from its own inline implementation to
   reuse the shared component).
 
+## Assigning a caravan to a pitch from the Unit page (9 Aug 2026)
+
+Andy: "We need a way to add customers and caravans to pitches." Customer
+assignment already existed (the Customer tab's "+ Assign owner" flow,
+gated on a caravan being present since Ownership hangs off Caravan, not
+Pitch) — the missing piece was caravan-to-pitch. The Caravan tab now has
+a matching "+ Assign caravan" action when a pitch has none sited, opening
+a `CaravanPicker` (same shape as the existing customer picker: search by
+make/model/key number, or "+ Create a new caravan" out to the full
+Caravans screen for a brand new one). Each match shows "currently on
+OP-B3" if it's already sited somewhere — picking one already sited
+elsewhere just moves it (end-dates the old Placement row, inserts a new
+one), rather than being blocked, matching the "caravans move pitches"
+behaviour already noted under Resolved modelling questions. A caravan
+that's already sited also gets an "Unsite" button (end-dates its
+Placement, same pattern as removing a secondary owner) — the caravan and
+its Ownership/owner are untouched, it just goes back to off-park.
+
 ## Data model (draft)
 
 Confirmed so far (Andy's own description, 6 Aug 2026):
