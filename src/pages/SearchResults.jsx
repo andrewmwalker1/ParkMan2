@@ -3,6 +3,27 @@ import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient.js";
 import { colors, fonts, cardStyle } from "../lib/theme.js";
 
+// Pitches are identified on screen as "OP-B5" (area code + number), but
+// that's not a real column -- it's the area join concatenated with
+// number. PostgREST can't ilike a computed cross-table value in one
+// query, and the whole pitch table is only ~200 rows, so it's simplest
+// to fetch the (small, already-joined) set and filter in JS against the
+// combined form as well as the number and area name on their own.
+async function searchPitches(q) {
+  const needle = q.toLowerCase();
+  const { data } = await supabase.from("pitch").select("id, number, area:area_id(code, name)");
+  return (data || [])
+    .filter((p) => {
+      const combined = `${p.area?.code || ""}-${p.number}`.toLowerCase();
+      return (
+        combined.includes(needle) ||
+        (p.number || "").toLowerCase().includes(needle) ||
+        (p.area?.name || "").toLowerCase().includes(needle)
+      );
+    })
+    .slice(0, 100);
+}
+
 async function runSearch(q) {
   const like = `%${q}%`;
 
@@ -30,17 +51,13 @@ async function runSearch(q) {
       .or([`make.ilike.${like}`, `model.ilike.${like}`, `key_number.ilike.${like}`, `serial_number.ilike.${like}`].join(","))
       .order("make")
       .limit(100),
-    supabase
-      .from("pitch")
-      .select("id, number, area:area_id(code, name)")
-      .ilike("number", like)
-      .limit(100),
+    searchPitches(q),
   ]);
 
   return {
     customers: customers.data || [],
     caravans: caravans.data || [],
-    pitches: pitches.data || [],
+    pitches,
   };
 }
 
