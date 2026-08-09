@@ -206,18 +206,31 @@ horizontal strip above the topbar under 720px (CSS in `index.html`, not
 inline styles — inline styles can't do media queries).
 
 **Updated (9 Aug 2026):** search moved from a live as-you-type dropdown
-to a dedicated `/search?q=` results page (`SearchResults.jsx`), matching
-CampManager's pattern Andy asked for — type a term, submit, land on a
-screen with Customers/Caravans/Pitches tabs showing counts and a table
-per tab, rather than picking off a preview list. Covers Customer
-(name/phone/email), Caravan (make/model/serial/key number) and Pitch —
-now a plain `ilike` on `number` since Number stores the area prefix
-directly (see the Pitch entity section below). Pitch results deep-link
-via `/pitches?open=<id>` since Pitches has no dedicated detail route
-(inline modal) — Pitches.jsx reads that param on load and opens the
-matching row's edit modal. The nav shell itself (sidebar/topbar) is
-pinned to the viewport — only the content area scrolls — since it was
-scrolling out of view on long lists.
+to a dedicated `/search?q=` results page (`SearchResults.jsx`) — type a
+term, submit, land on a results screen, matching CampManager's pattern
+Andy asked for. Went through two shapes on that same day:
+
+1. First cut: tabbed Customers/Caravans/Pitches results, then made a
+   pitch or caravan match also pull in what's connected to it one hop
+   via Placement/Ownership (so searching a pitch surfaced its caravan
+   and owner too).
+2. **Superseded same day** — Andy: Pitches/Customers/Caravans already
+   each have their own search on their own screen; the persistent
+   top-bar one is the one used most in day-to-day operations, and what
+   that needs is CampManager's "Holiday Homes" shape — **one row per
+   pitch, Customer and Caravan as columns alongside it**, not tabs to
+   flip between. `loadOperationalRows()` fetches the (small, ~200-row)
+   pitch/placement/caravan/ownership/customer tables in full and joins
+   them client-side into that shape, rather than a deep nested
+   PostgREST embed — reads more plainly and sidesteps multi-level
+   embedded-filter edge cases. Off-park caravans and ownerless customers
+   still get a row (blank Pitch cell) rather than being dropped.
+
+Pitch cells deep-link via `/pitches?open=<id>` since Pitches has no
+dedicated detail route (inline modal) — Pitches.jsx reads that param on
+load and opens the matching row's edit modal. The nav shell itself
+(sidebar/topbar) is pinned to the viewport — only the content area
+scrolls — since it was scrolling out of view on long lists.
 
 ## Data model (draft)
 
