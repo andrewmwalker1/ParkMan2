@@ -5,6 +5,8 @@ import ParksTab from "./admin/ParksTab.jsx";
 import SeasonsTab from "./admin/SeasonsTab.jsx";
 import AreasTab from "./admin/AreasTab.jsx";
 import PitchBandsTab from "./admin/PitchBandsTab.jsx";
+import NominalCodesTab from "./admin/NominalCodesTab.jsx";
+import VatRatesTab from "./admin/VatRatesTab.jsx";
 import SimpleLookupTab from "./admin/SimpleLookupTab.jsx";
 import { colors, fonts } from "../lib/theme.js";
 
@@ -26,6 +28,8 @@ const ALL_TABS = [
   { key: "caravanTypes", label: "Caravan Types", Component: () => <SimpleLookupTab table="caravan_type" singularLabel="Caravan type" pluralLabel="Caravan types" extraField={{ key: "default_licence_term_years", label: "Default licence term (years)", type: "number" }} />, permission: "can_manage_caravans" },
   { key: "caravanStatuses", label: "Caravan Statuses", Component: () => <SimpleLookupTab table="caravan_status" singularLabel="Caravan status" pluralLabel="Caravan statuses" />, permission: "can_manage_caravans" },
   { key: "caravanConditions", label: "Caravan Conditions", Component: () => <SimpleLookupTab table="caravan_condition" singularLabel="Caravan condition" pluralLabel="Caravan conditions" />, permission: "can_manage_caravans" },
+  { key: "nominalCodes", label: "Nominal Codes", Component: NominalCodesTab, permission: "can_manage_invoicing" },
+  { key: "vatRates", label: "VAT Rates", Component: VatRatesTab, permission: "can_manage_invoicing" },
 ];
 
 export default function Admin() {

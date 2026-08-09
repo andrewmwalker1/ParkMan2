@@ -434,6 +434,18 @@ as `"OM-OM-Band 3"`; fixed by stripping the area prefix before storing
 two data sets, just not as the stored `code`), and the resulting
 duplicate rows from the first run were deleted.
 
+### Milestone 2 — Nominal Codes + VAT Rates (admin CRUD)
+
+Added `nominal_code` (`code, name` — a Sage chart-of-accounts entry, e.g.
+"4011 / Pitch Fees") and `vat_rate` (`name, rate_percent` — `name` matches
+Sage's own VAT rate names, e.g. "Standard", so the eventual export can
+write it straight through). Both business-scoped lookup tables, same RLS
+shape as `season`. Bespoke admin tabs (`NominalCodesTab.jsx`,
+`VatRatesTab.jsx`), modeled directly on `SeasonsTab.jsx` — not the generic
+`SimpleLookupTab`, which only supports one extra field and both of these
+need two. No seed data — Andy adds his own chart of accounts and VAT
+rates via the screens, same as every other lookup table in this app.
+
 ## Data model (draft)
 
 Confirmed so far (Andy's own description, 6 Aug 2026):
