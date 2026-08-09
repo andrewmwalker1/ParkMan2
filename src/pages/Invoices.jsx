@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext.jsx";
 import { supabase } from "../lib/supabaseClient.js";
+import { exportInvoicesToSage } from "../lib/sageExport.js";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
 const fieldStyle = {
@@ -22,6 +23,8 @@ export default function Invoices() {
   const [invoices, setInvoices] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState(new Set());
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -43,6 +46,27 @@ export default function Invoices() {
     });
   }, [invoices, statusFilter, search]);
 
+  function toggleRow(id) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelected((prev) => (visible.every((inv) => prev.has(inv.id)) ? new Set() : new Set(visible.map((inv) => inv.id))));
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    await exportInvoicesToSage([...selected], "parkman2-sage-export.csv");
+    setExporting(false);
+  }
+
+  const allSelected = visible.length > 0 && visible.every((inv) => selected.has(inv.id));
+
   return (
     <div style={{ padding: "24px", maxWidth: "900px", margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
@@ -63,23 +87,36 @@ export default function Invoices() {
       {invoices === null && <p style={{ color: colors.inkSoft }}>Loading…</p>}
       {invoices !== null && visible.length === 0 && <p style={{ color: colors.inkSoft }}>No invoices found.</p>}
 
+      {visible.length > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: colors.inkSoft }}>
+            <input type="checkbox" checked={allSelected} onChange={toggleAll} />
+            Select all
+          </label>
+          {selected.size > 0 && (
+            <button onClick={handleExport} disabled={exporting} style={buttonStyle.secondary}>
+              {exporting ? "Exporting…" : `Export ${selected.size} to Sage CSV`}
+            </button>
+          )}
+        </div>
+      )}
+
       {visible.map((inv) => (
-        <Link
-          key={inv.id}
-          to={`/invoices/${inv.id}`}
-          style={{ ...cardStyle, padding: "12px 16px", marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", textDecoration: "none", color: "inherit" }}
-        >
-          <div>
-            <div style={{ fontWeight: 600 }}>
-              INV-{String(inv.invoice_number).padStart(6, "0")} · {inv.pitch?.number || "—"}
-              <span style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 600, color: STATUS_COLORS[inv.status], textTransform: "uppercase" }}>{STATUS_LABELS[inv.status]}</span>
+        <div key={inv.id} style={{ ...cardStyle, padding: "12px 16px", marginBottom: "8px", display: "flex", alignItems: "center", gap: "12px" }}>
+          <input type="checkbox" checked={selected.has(inv.id)} onChange={() => toggleRow(inv.id)} />
+          <Link to={`/invoices/${inv.id}`} style={{ flex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", textDecoration: "none", color: "inherit" }}>
+            <div>
+              <div style={{ fontWeight: 600 }}>
+                INV-{String(inv.invoice_number).padStart(6, "0")} · {inv.pitch?.number || "—"}
+                <span style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 600, color: STATUS_COLORS[inv.status], textTransform: "uppercase" }}>{STATUS_LABELS[inv.status]}</span>
+              </div>
+              <div style={{ fontSize: "12px", color: colors.inkSoft }}>
+                {inv.bill_to_name || "—"} · {inv.reference || "No reference"} · {inv.invoice_date}
+              </div>
             </div>
-            <div style={{ fontSize: "12px", color: colors.inkSoft }}>
-              {inv.bill_to_name || "—"} · {inv.reference || "No reference"} · {inv.invoice_date}
-            </div>
-          </div>
-          <div style={{ fontWeight: 600, fontFamily: fonts.mono }}>{currency.format(inv.total_gross)}</div>
-        </Link>
+            <div style={{ fontWeight: 600, fontFamily: fonts.mono }}>{currency.format(inv.total_gross)}</div>
+          </Link>
+        </div>
       ))}
     </div>
   );

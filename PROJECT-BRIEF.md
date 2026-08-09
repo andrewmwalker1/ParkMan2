@@ -524,6 +524,25 @@ that button (and anything else app-chrome-like) so what prints is just
 the document. No new dependency — this is native browser print-to-PDF,
 per the "printing only for now" decision above.
 
+### Milestone 6 — Sage export
+
+`src/lib/sageExport.js` writes one row per `invoice_line`, matching Andy's
+`SAGE EXPORT.csv` sample column-for-column: `TYPE` always `"Inv"`,
+`Customer Reference` the pitch number, `Date` reformatted to `DD-MM-YYYY`,
+`Customer Name` left blank (matching every row in the sample — Sage
+resolves the name from the account), `Reference` from the invoice,
+`Ledger Account` the nominal code, `Details` the line description, then
+`Net`/`VAT Rate`/`VAT`/`Total`. Every field is quoted, matching the
+sample's own formatting. `Invoices.jsx` gained row selection (checkbox +
+"Select all", same pattern as `OperationalTable.jsx`) and an "Export N to
+Sage CSV" button. Verified against two test invoices — the generated
+header and column order match the supplied sample exactly.
+
+This closes out the pitch-bands + invoicing build (Milestones 1–6).
+Deliberately not built: emailing invoices and the batch-invoicing/
+queueing system (see the decisions at the top of this section) — those
+are next.
+
 ## Data model (draft)
 
 Confirmed so far (Andy's own description, 6 Aug 2026):
