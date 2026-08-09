@@ -98,16 +98,21 @@ try {
       addr9, addr7, addr3, town, postcode, county, province, , telephone, mobile,
     ] = cols;
 
+    const names = splitNames(firstName);
+    const titles = splitTitles(title);
+    const surnameTrimmed = (surname || "").trim();
+
+    // Vacant-pitch rows: CampManager's export includes every pitch, and
+    // ones with no current owner just have the site number with every
+    // other field blank -- nothing to import.
+    if (names.length === 0 && !surnameTrimmed) continue;
+
     const pitchNumber = normalisePitchNumber(site);
     const pitchId = pitchByNumber.get(pitchNumber);
     if (!pitchId) {
       noPitchMatch.push(site);
       continue;
     }
-
-    const names = splitNames(firstName);
-    const titles = splitTitles(title);
-    const surnameTrimmed = (surname || "").trim();
 
     const street = [addr9, addr7, addr3].map((s) => (s || "").trim()).filter(Boolean).join("\n");
 
