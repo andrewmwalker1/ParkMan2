@@ -205,13 +205,19 @@ wrapping every authenticated route in `App.jsx`. Sidebar collapses to a
 horizontal strip above the topbar under 720px (CSS in `index.html`, not
 inline styles — inline styles can't do media queries).
 
-Search covers Customer (name/phone/email), Caravan (make/model/serial/key
-number) and Pitch (number only, not the "OP-B5" area-prefixed form —
-that needs a join/view, left for later). Results are a live dropdown,
-grouped by type, debounced 250ms, 2-char minimum. Pitch results deep-link
+**Updated (9 Aug 2026):** search moved from a live as-you-type dropdown
+to a dedicated `/search?q=` results page (`SearchResults.jsx`), matching
+CampManager's pattern Andy asked for — type a term, submit, land on a
+screen with Customers/Caravans/Pitches tabs showing counts and a table
+per tab, rather than picking off a preview list. Covers Customer
+(name/phone/email), Caravan (make/model/serial/key number) and Pitch —
+now a plain `ilike` on `number` since Number stores the area prefix
+directly (see the Pitch entity section below). Pitch results deep-link
 via `/pitches?open=<id>` since Pitches has no dedicated detail route
 (inline modal) — Pitches.jsx reads that param on load and opens the
-matching row's edit modal.
+matching row's edit modal. The nav shell itself (sidebar/topbar) is
+pinned to the viewport — only the content area scrolls — since it was
+scrolling out of view on long lists.
 
 ## Data model (draft)
 
@@ -965,6 +971,14 @@ already got right.
   confirmed simple alphanumeric sort order is all the park actually
   needs (no separate manual drag-order field required, since the park
   is "reasonably well ordered" already).
+  **Corrected (9 Aug 2026):** Number now stores the area prefix directly
+  — `PN-B5`, not `B5` — rather than deriving it at display time from
+  the Area join. Andy: that's the form staff actually search for and
+  read off screen, and deriving it on the fly meant search couldn't
+  match it without an awkward join. `supabase/13-pitch-number-prefix.sql`
+  backfilled existing rows; the create form now auto-fills Number with
+  the selected Area's prefix and swaps it in place if Area changes
+  mid-edit (`Pitches.jsx`'s `handleAreaChange`).
 - **Area, Band** — already modeled (`area_id`, `pitch_band_id`).
 - **Type** (data-driven lookup, e.g. Caravan / Lodge / Storage / Display)
   — deliberately not hardcoded, so a future new unit type (or another

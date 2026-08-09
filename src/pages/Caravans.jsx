@@ -32,12 +32,12 @@ export default function Caravans() {
 
     supabase
       .from("placement")
-      .select("caravan_id, pitch:pitch_id(number, area:area_id(code))")
+      .select("caravan_id, pitch:pitch_id(number)")
       .is("end_date", null)
       .then(({ data }) => {
         const map = {};
         (data || []).forEach((p) => {
-          if (p.pitch) map[p.caravan_id] = `${p.pitch.area?.code}-${p.pitch.number}`;
+          if (p.pitch) map[p.caravan_id] = p.pitch.number;
         });
         setLocations(map);
       });

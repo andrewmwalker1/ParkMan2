@@ -95,7 +95,7 @@ export default function CaravanDetail() {
     });
     supabase
       .from("placement")
-      .select("pitch:pitch_id(number, area:area_id(name, code))")
+      .select("pitch:pitch_id(number, area:area_id(name))")
       .eq("caravan_id", id)
       .is("end_date", null)
       .maybeSingle()
@@ -166,7 +166,7 @@ export default function CaravanDetail() {
         <div style={{ ...cardStyle, padding: "12px 16px", marginBottom: "16px", background: colors.bg, border: "none" }}>
           <span style={{ fontSize: "13px", color: colors.inkSoft }}>Currently: </span>
           {placement ? (
-            <span style={{ fontSize: "13px", color: colors.ink, fontWeight: 600 }}>{placement.area?.code}-{placement.number} ({placement.area?.name})</span>
+            <span style={{ fontSize: "13px", color: colors.ink, fontWeight: 600 }}>{placement.number} ({placement.area?.name})</span>
           ) : (
             <span style={{ fontSize: "13px", color: colors.ink }}>Off-park</span>
           )}

@@ -23,7 +23,7 @@ function blankForm(defaults) {
     pitch_band_id: "",
     type_id: defaults.type_id || "",
     status_id: defaults.status_id || "",
-    number: "",
+    number: defaults.areaCode ? `${defaults.areaCode}-` : "",
     sort_key: "",
     capacity: "1",
     length: "",
@@ -79,13 +79,7 @@ export default function Pitches() {
     const needle = search.toLowerCase();
     return pitches
       .filter((p) => !areaFilter || p.area_id === areaFilter)
-      .filter((p) => {
-        if (!needle) return true;
-        // Staff search by the on-screen "OP-B5" form (area code + number),
-        // not just the raw number -- see the same fix in SearchResults.jsx.
-        const combined = `${p.area?.code || ""}-${p.number}`.toLowerCase();
-        return combined.includes(needle) || p.number.toLowerCase().includes(needle);
-      })
+      .filter((p) => !needle || p.number.toLowerCase().includes(needle))
       .sort((a, b) => {
         const areaCmp = (a.area?.code || "").localeCompare(b.area?.code || "");
         if (areaCmp !== 0) return areaCmp;
@@ -97,7 +91,30 @@ export default function Pitches() {
 
   function openCreate() {
     setError(null);
-    setForm(blankForm({ area_id: areas[0]?.id, type_id: types[0]?.id, status_id: statuses[0]?.id }));
+    setForm(blankForm({ area_id: areas[0]?.id, areaCode: areas[0]?.code, type_id: types[0]?.id, status_id: statuses[0]?.id }));
+  }
+
+  // Number now stores the area prefix directly (Andy, 9 Aug 2026: "B5"
+  // should be stored as "PN-B5"), so switching Area mid-edit swaps the
+  // prefix in place rather than leaving a stale one behind.
+  function handleAreaChange(newAreaId) {
+    setForm((f) => {
+      const oldCode = areas.find((a) => a.id === f.area_id)?.code;
+      const newCode = areas.find((a) => a.id === newAreaId)?.code;
+      let number = f.number;
+      if (oldCode && number.toUpperCase().startsWith(`${oldCode}-`)) {
+        number = `${newCode || ""}-${number.slice(oldCode.length + 1)}`;
+      } else if (!number && newCode) {
+        number = `${newCode}-`;
+      }
+      return {
+        ...f,
+        area_id: newAreaId,
+        pitch_band_id: "",
+        number,
+        sort_key: f.sortKeyTouched ? f.sort_key : suggestSortKey(number),
+      };
+    });
   }
 
   function openEdit(p) {
@@ -189,7 +206,7 @@ export default function Pitches() {
       {visiblePitches.map((p) => (
         <div key={p.id} style={{ ...cardStyle, padding: "12px 16px", marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ fontWeight: 600 }}>{p.area?.code}-{p.number}</div>
+            <div style={{ fontWeight: 600 }}>{p.number}</div>
             <div style={{ fontSize: "12px", color: colors.inkSoft }}>
               {p.area?.name} · {p.type?.name} · {p.status?.name}
               {p.band && ` · ${p.area?.code}-${p.band.code}`}
@@ -212,14 +229,14 @@ export default function Pitches() {
             </h2>
             <form onSubmit={handleSave}>
               <label style={labelStyle}>Area</label>
-              <select required value={form.area_id} onChange={(e) => setForm({ ...form, area_id: e.target.value, pitch_band_id: "" })} style={fieldStyle}>
+              <select required value={form.area_id} onChange={(e) => handleAreaChange(e.target.value)} style={fieldStyle}>
                 {areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
               </select>
 
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "10px" }}>
                 <div>
                   <label style={labelStyle}>Number</label>
-                  <input required value={form.number} onChange={(e) => handleNumberChange(e.target.value)} placeholder="e.g. A16" style={fieldStyle} />
+                  <input required value={form.number} onChange={(e) => handleNumberChange(e.target.value)} placeholder="e.g. OP-A16" style={fieldStyle} />
                 </div>
                 <div>
                   <label style={labelStyle}>Sort key</label>
