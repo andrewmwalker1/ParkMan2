@@ -11,7 +11,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   return (
-    <div style={{ background: chrome.sidebarBg, padding: "12px 14px" }}>
+    <div className="pm2-sidebar" style={{ background: chrome.sidebarBg, padding: "12px 14px" }}>
       <div className="pm2-sidebar-nav">
         <div
           className="pm2-wordmark"

@@ -4,7 +4,7 @@ import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
 // Bump both on every deployed change, same convention as Hub/Maintenance --
 // gives Andy a quick way to confirm a push actually landed on the live site.
-const APP_VERSION = "0.3.0";
+const APP_VERSION = "0.3.1";
 const BUILD_DATE = "9 Aug 2026";
 
 export default function Dashboard() {

@@ -8,7 +8,7 @@ export default function Layout({ children }) {
       <Sidebar />
       <div className="pm2-main">
         <Topbar />
-        <div style={{ flex: 1, background: colors.bg }}>{children}</div>
+        <div className="pm2-content" style={{ background: colors.bg }}>{children}</div>
       </div>
     </div>
   );

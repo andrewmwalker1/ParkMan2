@@ -7,6 +7,7 @@ export default function Topbar() {
 
   return (
     <div
+      className="pm2-topbar"
       style={{
         background: chrome.topbarBg,
         padding: "12px 20px",
