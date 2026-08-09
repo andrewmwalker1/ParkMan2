@@ -1,20 +1,60 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext.jsx";
+import { supabase } from "../lib/supabaseClient.js";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
 // Bump both on every deployed change, same convention as Hub/Maintenance --
 // gives Andy a quick way to confirm a push actually landed on the live site.
-const APP_VERSION = "0.3.1";
+const APP_VERSION = "0.4.0";
 const BUILD_DATE = "9 Aug 2026";
+
+// Andy (9 Aug 2026): dashboard starts with pitch occupancy and caravans
+// for sale, and "there will be more when we move onto billing and bring
+// maintenance into the system" -- laid out as a grid of tiles so more
+// can drop in alongside these without a redesign.
+function StatTile({ value, label }) {
+  return (
+    <div style={{ ...cardStyle, padding: "18px 20px" }}>
+      <div style={{ fontFamily: fonts.display, fontSize: "30px", fontWeight: 700, color: colors.brandDark, lineHeight: 1 }}>
+        {value === null ? "—" : value}
+      </div>
+      <div style={{ fontSize: "12.5px", color: colors.inkSoft, marginTop: "6px" }}>{label}</div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { profile } = useAuth();
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from("pitch").select("id", { count: "exact", head: true }),
+      supabase.from("placement").select("pitch_id", { count: "exact", head: true }).is("end_date", null),
+      supabase.from("caravan").select("id", { count: "exact", head: true }).eq("for_sale", true),
+    ]).then(([pitches, occupied, forSale]) => {
+      const total = pitches.count ?? 0;
+      const occupiedCount = occupied.count ?? 0;
+      setStats({
+        occupied: occupiedCount,
+        unoccupied: Math.max(total - occupiedCount, 0),
+        forSale: forSale.count ?? 0,
+      });
+    });
+  }, []);
 
   return (
     <div style={{ padding: "24px", maxWidth: "640px", margin: "0 auto" }}>
       <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "0 0 20px" }}>
         Welcome back, {profile?.display_name}.
       </h1>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", marginBottom: "20px" }}>
+        <StatTile value={stats?.occupied ?? null} label="Occupied pitches" />
+        <StatTile value={stats?.unoccupied ?? null} label="Unoccupied pitches" />
+        <StatTile value={stats?.forSale ?? null} label="Caravans for sale" />
+      </div>
 
       <div style={{ ...cardStyle, padding: "20px 24px", marginBottom: "20px" }}>
         <p style={{ color: colors.ink, margin: 0 }}>
