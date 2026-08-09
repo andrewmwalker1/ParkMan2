@@ -13,13 +13,21 @@ const BUILD_DATE = "9 Aug 2026";
 // for sale, and "there will be more when we move onto billing and bring
 // maintenance into the system" -- laid out as a grid of tiles so more
 // can drop in alongside these without a redesign.
-function StatTile({ value, label }) {
+//
+// Occupancy is three-way, not a simple yes/no -- refined same day after
+// Andy clarified "Unoccupied" specifically means a caravan is sited but
+// nobody's recorded as owning it (not just "no caravan at all"):
+//   Occupied   = pitch has a caravan AND that caravan has an owner
+//   Unoccupied = pitch has a caravan but NO owner recorded
+//   Empty      = pitch has no caravan sited (so no owner either)
+function StatTile({ value, label, sub }) {
   return (
     <div style={{ ...cardStyle, padding: "18px 20px" }}>
       <div style={{ fontFamily: fonts.display, fontSize: "30px", fontWeight: 700, color: colors.brandDark, lineHeight: 1 }}>
         {value === null ? "—" : value}
       </div>
       <div style={{ fontSize: "12.5px", color: colors.inkSoft, marginTop: "6px" }}>{label}</div>
+      {sub && <div style={{ fontSize: "11px", color: colors.inkSoft, opacity: 0.75, marginTop: "1px" }}>{sub}</div>}
     </div>
   );
 }
@@ -31,14 +39,21 @@ export default function Dashboard() {
   useEffect(() => {
     Promise.all([
       supabase.from("pitch").select("id", { count: "exact", head: true }),
-      supabase.from("placement").select("pitch_id", { count: "exact", head: true }).is("end_date", null),
+      supabase.from("placement").select("pitch_id, caravan_id").is("end_date", null),
+      supabase.from("ownership").select("caravan_id").is("end_date", null),
       supabase.from("caravan").select("id", { count: "exact", head: true }).eq("for_sale", true),
-    ]).then(([pitches, occupied, forSale]) => {
-      const total = pitches.count ?? 0;
-      const occupiedCount = occupied.count ?? 0;
+    ]).then(([pitches, placements, ownerships, forSale]) => {
+      const totalPitches = pitches.count ?? 0;
+      const placementRows = placements.data || [];
+      const ownedCaravanIds = new Set((ownerships.data || []).map((o) => o.caravan_id));
+
+      const withCaravan = placementRows.length;
+      const occupied = placementRows.filter((pl) => ownedCaravanIds.has(pl.caravan_id)).length;
+
       setStats({
-        occupied: occupiedCount,
-        unoccupied: Math.max(total - occupiedCount, 0),
+        occupied,
+        unoccupied: withCaravan - occupied,
+        empty: Math.max(totalPitches - withCaravan, 0),
         forSale: forSale.count ?? 0,
       });
     });
@@ -51,8 +66,9 @@ export default function Dashboard() {
       </h1>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", marginBottom: "20px" }}>
-        <StatTile value={stats?.occupied ?? null} label="Occupied pitches" />
-        <StatTile value={stats?.unoccupied ?? null} label="Unoccupied pitches" />
+        <StatTile value={stats?.occupied ?? null} label="Occupied pitches" sub="caravan & customer" />
+        <StatTile value={stats?.unoccupied ?? null} label="Unoccupied pitches" sub="caravan, no customer" />
+        <StatTile value={stats?.empty ?? null} label="Empty pitches" sub="no caravan sited" />
         <StatTile value={stats?.forSale ?? null} label="Caravans for sale" />
       </div>
 
