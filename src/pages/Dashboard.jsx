@@ -2,6 +2,11 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext.jsx";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
+// Bump both on every deployed change, same convention as Hub/Maintenance --
+// gives Andy a quick way to confirm a push actually landed on the live site.
+const APP_VERSION = "0.2.0";
+const BUILD_DATE = "9 Aug 2026";
+
 export default function Dashboard() {
   const { profile, business, signOut } = useAuth();
 
@@ -27,6 +32,10 @@ export default function Dashboard() {
         <Link to="/customers" style={{ ...buttonStyle.primary, textDecoration: "none", display: "inline-block" }}>Customers</Link>
         <Link to="/caravans" style={{ ...buttonStyle.primary, textDecoration: "none", display: "inline-block" }}>Caravans</Link>
       </div>
+
+      <p style={{ textAlign: "center", fontSize: "10.5px", color: colors.inkSoft, opacity: 0.6, marginTop: "22px" }}>
+        ParkMan2 v{APP_VERSION} · built {BUILD_DATE}
+      </p>
     </div>
   );
 }
