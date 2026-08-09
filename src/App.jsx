@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./lib/AuthContext.jsx";
 import Layout from "./components/Layout.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
+import ParkList from "./pages/ParkList.jsx";
 import Admin from "./pages/Admin.jsx";
 import Pitches from "./pages/Pitches.jsx";
 import Customers from "./pages/Customers.jsx";
@@ -41,6 +42,7 @@ function AppShell() {
       <Layout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/park-list" element={<ParkList />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/pitches" element={<Pitches />} />
           <Route path="/customers" element={<Customers />} />

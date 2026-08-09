@@ -284,6 +284,37 @@ search list") — SearchResults.jsx's `FILTERS` map uses the exact same
 occupied/unoccupied/empty test as the Dashboard's own calculation, so
 the tile's number and the list behind it can't disagree.
 
+## Park list + shared operational-row loader (9 Aug 2026)
+
+`loadOperationalRows()`, `customerName()`/`customerContact()`/
+`caravanLabel()`, and the Pitch/Customer/Caravan table itself moved out
+of `SearchResults.jsx` into `src/lib/operationalRows.js` and
+`src/components/OperationalTable.jsx` — needed by two screens now, not
+one. **Park list** (`/park-list`, `ParkList.jsx`) is a new sidebar item
+directly under Dashboard: the same table, unfiltered (every pitch), with
+a CampManager-style pager — "Show N rows" (25/50/100/200/**250**
+default/500, per Andy) + First/Prev/page-numbers/Next/Last, windowed to
+~5 page buttons so it holds up as the park (and the list) grows.
+
+Dashboard confirmed already at `/` (`App.jsx`'s root route), so no
+change was needed to make it the app's landing screen.
+
+## Unit page Pitch tab: full pitch fields, not just a link (9 Aug 2026)
+
+Andy: "I think we should have all the pitch fields displayed and
+editable" on the Unit page's Pitch tab — it was a read-only summary
++ a link out to the Pitches.jsx modal. Now inlines the same fields as
+that modal (Area, Number, Sort Key, Pitch Band, Type, Status, Capacity,
+Length, Width) with the same handling: `handlePitchAreaChange` swaps
+the Number's area-code prefix in place on Area change (see the Pitch
+entity section below), `suggestSortKey` re-suggests Sort Key until it's
+manually touched. Pitches.jsx's own inline-modal editor is untouched —
+both remain valid ways in. One real bug caught before shipping: calling
+`refresh()` then immediately `setPitchStatus("saved")` raced against
+`refresh`'s own async `setPitchStatus("idle")`, so "Saved." flashed and
+vanished — fixed by only resetting status on `pitchId` change (its own
+effect), never inside `refresh()` itself.
+
 ## Data model (draft)
 
 Confirmed so far (Andy's own description, 6 Aug 2026):

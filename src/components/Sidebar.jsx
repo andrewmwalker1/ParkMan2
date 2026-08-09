@@ -3,6 +3,7 @@ import { chrome, fonts } from "../lib/theme.js";
 
 const NAV_ITEMS = [
   { to: "/", label: "Dashboard", end: true },
+  { to: "/park-list", label: "Park list" },
   { to: "/pitches", label: "Pitches" },
   { to: "/customers", label: "Customers" },
   { to: "/caravans", label: "Caravans" },
