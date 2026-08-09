@@ -510,6 +510,20 @@ deleting its lines) requires `can_edit_invoices`. Viewing and creating
 stay open to everyone regardless of status. This is also just a better
 rule than the original plan, not merely a workaround.
 
+### Milestone 5 — Branded print view
+
+`InvoicePrint.jsx` (`/invoices/:id/print`) is deliberately rendered
+**outside** `<Layout>` — App.jsx now branches into two route trees after
+auth, one bare (just this route) and one wrapped in the normal sidebar/
+topbar chrome, rather than the print route inheriting app chrome it would
+have to hide. Pulls `business` (name, address, phone/email, VAT number,
+company number) for the letterhead, plus the invoice and its lines, in a
+clean two-column header/bill-to/pitch layout with a line table and
+totals. A "Print" button calls `window.print()`; `@media print` hides
+that button (and anything else app-chrome-like) so what prints is just
+the document. No new dependency — this is native browser print-to-PDF,
+per the "printing only for now" decision above.
+
 ## Data model (draft)
 
 Confirmed so far (Andy's own description, 6 Aug 2026):

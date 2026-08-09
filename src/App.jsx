@@ -14,6 +14,7 @@ import SearchResults from "./pages/SearchResults.jsx";
 import UnitDetail from "./pages/UnitDetail.jsx";
 import Invoices from "./pages/Invoices.jsx";
 import InvoiceDetail from "./pages/InvoiceDetail.jsx";
+import InvoicePrint from "./pages/InvoicePrint.jsx";
 import { colors, pageStyle } from "./lib/theme.js";
 
 function AppShell() {
@@ -40,25 +41,35 @@ function AppShell() {
   if (!session) return <Login />;
 
   return (
-    <div style={pageStyle}>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/park-list" element={<ParkList />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/pitches" element={<Pitches />} />
-          <Route path="/customers" element={<Customers />} />
-          <Route path="/customers/:id" element={<CustomerDetail />} />
-          <Route path="/caravans" element={<Caravans />} />
-          <Route path="/caravans/:id" element={<CaravanDetail />} />
-          <Route path="/search" element={<SearchResults />} />
-          <Route path="/units/:pitchId" element={<UnitDetail />} />
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/invoices/new" element={<InvoiceDetail />} />
-          <Route path="/invoices/:id" element={<InvoiceDetail />} />
-        </Routes>
-      </Layout>
-    </div>
+    <Routes>
+      {/* No sidebar/topbar chrome -- a print/PDF-facing layout, not a
+          working screen, same reasoning as the Print button next to it. */}
+      <Route path="/invoices/:id/print" element={<InvoicePrint />} />
+      <Route
+        path="/*"
+        element={
+          <div style={pageStyle}>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/park-list" element={<ParkList />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/pitches" element={<Pitches />} />
+                <Route path="/customers" element={<Customers />} />
+                <Route path="/customers/:id" element={<CustomerDetail />} />
+                <Route path="/caravans" element={<Caravans />} />
+                <Route path="/caravans/:id" element={<CaravanDetail />} />
+                <Route path="/search" element={<SearchResults />} />
+                <Route path="/units/:pitchId" element={<UnitDetail />} />
+                <Route path="/invoices" element={<Invoices />} />
+                <Route path="/invoices/new" element={<InvoiceDetail />} />
+                <Route path="/invoices/:id" element={<InvoiceDetail />} />
+              </Routes>
+            </Layout>
+          </div>
+        }
+      />
+    </Routes>
   );
 }
 
