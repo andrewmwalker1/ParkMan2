@@ -446,6 +446,30 @@ shape as `season`. Bespoke admin tabs (`NominalCodesTab.jsx`,
 need two. No seed data — Andy adds his own chart of accounts and VAT
 rates via the screens, same as every other lookup table in this app.
 
+### Milestone 3 — Minimal roles/permissions (`can_edit_invoices`)
+
+First real permission gate in ParkMan2 — until now every signed-in user
+could do everything (see `12-user-admin.sql`'s own comment to that
+effect). Added `role` (business-scoped lookup, e.g. "Admin"/"Staff") and
+`role_permission` (`role_id, permission_key` — presence = granted),
+plus `profiles.role_id`. This is deliberately the same shape as the
+Maintenance app's `role_permissions` (named keys, checked before a
+feature is shown) rather than a hardcoded enum, per the "Multi-park staff
+access control" roadmap item above — reusing that shape now means the
+eventual Maintenance merge is a data migration, not a rewrite. Only the
+one permission needed today, `can_edit_invoices`, is actually granted
+anywhere (to Admin). The migration backfills 'Admin' and 'Staff' roles
+for every existing business and sets every existing profile to Admin, so
+nobody lost access to anything they could already do.
+
+`AuthContext.jsx` now loads the signed-in profile's granted permission
+keys into a `permissions` Set and exposes `hasPermission(key)`, for
+screens to hide controls a role can't use (RLS is still the real gate —
+this just avoids showing a button that would fail). `UsersTab.jsx` gained
+a Role dropdown per user (any signed-in user can currently reassign
+anyone's role, same open-access model as the rest of Admin — Andy only
+asked to gate invoice *editing*, not user/role management itself).
+
 ## Data model (draft)
 
 Confirmed so far (Andy's own description, 6 Aug 2026):

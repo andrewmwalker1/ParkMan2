@@ -7,6 +7,7 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined); // undefined = not checked yet, null = signed out
   const [profile, setProfile] = useState(null);
   const [business, setBusiness] = useState(null);
+  const [permissions, setPermissions] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [deactivated, setDeactivated] = useState(false);
   const loadedUserIdRef = useRef(null);
@@ -15,7 +16,7 @@ export function AuthProvider({ children }) {
     setDeactivated(false);
     const { data: profileRow, error: profileError } = await supabase
       .from("profiles")
-      .select("id, business_id, display_name, is_active")
+      .select("id, business_id, display_name, is_active, role_id")
       .eq("id", userId)
       .single();
     if (profileError) {
@@ -42,6 +43,16 @@ export function AuthProvider({ children }) {
     if (businessError) console.error("Failed to load business", businessError);
     setBusiness(businessRow || null);
 
+    if (profileRow.role_id) {
+      const { data: permRows } = await supabase
+        .from("role_permission")
+        .select("permission_key")
+        .eq("role_id", profileRow.role_id);
+      setPermissions(new Set((permRows || []).map((p) => p.permission_key)));
+    } else {
+      setPermissions(new Set());
+    }
+
     setLoading(false);
   }, []);
 
@@ -66,6 +77,7 @@ export function AuthProvider({ children }) {
         loadedUserIdRef.current = null;
         setProfile(null);
         setBusiness(null);
+        setPermissions(new Set());
         setLoading(false);
       }
     });
@@ -74,8 +86,9 @@ export function AuthProvider({ children }) {
   }, [loadProfileAndBusiness]);
 
   const signOut = useCallback(() => supabase.auth.signOut(), []);
+  const hasPermission = useCallback((key) => permissions.has(key), [permissions]);
 
-  const value = { session, profile, business, loading, deactivated, signOut };
+  const value = { session, profile, business, permissions, hasPermission, loading, deactivated, signOut };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

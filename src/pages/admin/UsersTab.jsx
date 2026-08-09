@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../../lib/AuthContext.jsx";
 import { supabase } from "../../lib/supabaseClient.js";
 import { colors, fonts, cardStyle, buttonStyle } from "../../lib/theme.js";
 
@@ -15,7 +16,9 @@ const fieldStyle = {
 const blankInvite = { email: "", displayName: "" };
 
 export default function UsersTab() {
+  const { profile } = useAuth();
   const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [invite, setInvite] = useState(blankInvite);
   const [inviteStatus, setInviteStatus] = useState("idle"); // idle | sending | sent | error
   const [editingId, setEditingId] = useState(null);
@@ -32,6 +35,17 @@ export default function UsersTab() {
   }
 
   useEffect(refresh, []);
+  useEffect(() => {
+    if (!profile) return;
+    supabase.from("role").select("id, name").eq("business_id", profile.business_id).order("name").then(({ data }) => setRoles(data || []));
+  }, [profile]);
+
+  async function handleRoleChange(userId, roleId) {
+    setError(null);
+    const { error: err } = await supabase.from("profiles").update({ role_id: roleId || null }).eq("id", userId);
+    if (err) setError(err.message);
+    else refresh();
+  }
 
   async function handleInvite(e) {
     e.preventDefault();
@@ -114,6 +128,13 @@ export default function UsersTab() {
                   )}
                 </div>
                 <div style={{ fontSize: "12px", color: colors.inkSoft, marginBottom: "10px" }}>{u.email}</div>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: colors.inkSoft, marginBottom: "10px" }}>
+                  Role
+                  <select value={u.role_id || ""} onChange={(e) => handleRoleChange(u.id, e.target.value)} style={{ padding: "4px 8px", borderRadius: "8px", border: `1px solid ${colors.lineStrong}`, fontFamily: fonts.body }}>
+                    <option value="">No role</option>
+                    {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                  </select>
+                </label>
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                   <button onClick={() => startEdit(u)} style={buttonStyle.secondary}>Edit</button>
                   {u.is_active === false ? (
