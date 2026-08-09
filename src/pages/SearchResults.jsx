@@ -33,7 +33,7 @@ async function loadOperationalRows() {
   const [{ data: pitches }, { data: placements }, { data: caravans }, { data: ownerships }, { data: customers }] = await Promise.all([
     supabase.from("pitch").select("id, number, sort_key, area:area_id(name, code)"),
     supabase.from("placement").select("pitch_id, caravan_id").is("end_date", null),
-    supabase.from("caravan").select("id, make, model, key_number, serial_number"),
+    supabase.from("caravan").select("id, make, model, key_number, serial_number, for_sale"),
     supabase.from("ownership").select("caravan_id, primary_customer_id").is("end_date", null),
     supabase.from("customer").select("id, customer1_first_name, customer1_surname, customer1_phone, customer1_email, customer2_first_name, customer2_surname"),
   ]);
@@ -92,6 +92,17 @@ function rowMatches(row, needle) {
   return `${pitchText} ${caravanText} ${customerText}`.toLowerCase().includes(needle);
 }
 
+// Dashboard stat tiles link straight into a filtered view of this same
+// table (Andy, 9 Aug 2026: "I'd like to click on the stats tiles and
+// get to the search list showing the appropriate info") rather than a
+// free-text search -- same three-way occupancy split as the Dashboard.
+const FILTERS = {
+  occupied: { title: "Occupied pitches", desc: "caravan sited, with an owner recorded", test: (r) => r.pitch && r.caravan && r.customer },
+  unoccupied: { title: "Unoccupied pitches", desc: "caravan sited, no owner recorded", test: (r) => r.pitch && r.caravan && !r.customer },
+  empty: { title: "Empty pitches", desc: "no caravan sited", test: (r) => r.pitch && !r.caravan },
+  forsale: { title: "Caravans for sale", desc: null, test: (r) => !!r.caravan?.for_sale },
+};
+
 const tableWrapStyle = { ...cardStyle, overflow: "hidden" };
 const thStyle = { textAlign: "left", padding: "10px 16px", fontSize: "11px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: colors.inkSoft, borderBottom: `1px solid ${colors.line}` };
 const tdStyle = { padding: "12px 16px", fontSize: "13.5px", borderBottom: `1px solid ${colors.line}`, verticalAlign: "top" };
@@ -102,12 +113,14 @@ const blankStyle = { color: colors.inkSoft };
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
   const q = searchParams.get("q") || "";
+  const filterKey = searchParams.get("filter");
+  const filter = filterKey && FILTERS[filterKey] ? FILTERS[filterKey] : null;
   const [allRows, setAllRows] = useState(null);
 
   useEffect(() => {
     setAllRows(null);
     loadOperationalRows().then(setAllRows);
-  }, [q]);
+  }, [q, filterKey]);
 
   if (!allRows) {
     return (
@@ -118,17 +131,21 @@ export default function SearchResults() {
   }
 
   const needle = q.trim().toLowerCase();
-  const rows = needle ? allRows.filter((r) => rowMatches(r, needle)) : [];
+  const rows = filter ? allRows.filter(filter.test) : needle ? allRows.filter((r) => rowMatches(r, needle)) : [];
 
   return (
     <div style={{ padding: "24px", maxWidth: "980px", margin: "0 auto" }}>
-      <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "0 0 4px" }}>Search results</h1>
+      <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "0 0 4px" }}>
+        {filter ? filter.title : "Search results"}
+      </h1>
       <p style={{ color: colors.inkSoft, margin: "0 0 20px" }}>
-        {rows.length} match{rows.length === 1 ? "" : "es"} for "{q}"
+        {filter
+          ? `${rows.length} result${rows.length === 1 ? "" : "s"}${filter.desc ? ` — ${filter.desc}` : ""}`
+          : `${rows.length} match${rows.length === 1 ? "" : "es"} for "${q}"`}
       </p>
 
       {rows.length === 0 ? (
-        <p style={{ color: colors.inkSoft }}>No matches for "{q}".</p>
+        <p style={{ color: colors.inkSoft }}>{filter ? "No matches." : `No matches for "${q}".`}</p>
       ) : (
         <div style={tableWrapStyle}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>

@@ -266,6 +266,24 @@ and customer change over time via Placement/Ownership.
 - Pitches.jsx list and Search Results both link into this page now
   instead of the old direct entity links.
 
+## Dashboard occupancy stats + filtered views (9 Aug 2026)
+
+Three-way pitch occupancy (Occupied/Unoccupied/Empty, see `Dashboard.jsx`)
+surfaced a real data bug: 8 "ghost" caravans from the original Holiday
+Homes CSV seed had every real field blank (make/model/key_number/
+serial_number all null) but still had an active Placement, so pitches
+like YH-F4 counted as occupied when Andy confirmed they're actually
+empty. `scripts/remove-ghost-caravans.mjs` deleted them (cascades to
+their Placement) — down to 198 real caravans from 206. Root cause: the
+original seed script created a caravan + Placement for every CSV row
+regardless of whether the row actually had caravan data.
+
+Each stat tile now links to `/search?filter=occupied|unoccupied|empty|
+forsale` (Andy: "I'd like to click on the stats tiles and get to the
+search list") — SearchResults.jsx's `FILTERS` map uses the exact same
+occupied/unoccupied/empty test as the Dashboard's own calculation, so
+the tile's number and the list behind it can't disagree.
+
 ## Data model (draft)
 
 Confirmed so far (Andy's own description, 6 Aug 2026):

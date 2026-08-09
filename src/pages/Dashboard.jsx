@@ -20,15 +20,20 @@ const BUILD_DATE = "9 Aug 2026";
 //   Occupied   = pitch has a caravan AND that caravan has an owner
 //   Unoccupied = pitch has a caravan but NO owner recorded
 //   Empty      = pitch has no caravan sited (so no owner either)
-function StatTile({ value, label, sub }) {
+// Andy (9 Aug 2026): "I'd like to click on the stats tiles and get to
+// the search list showing the appropriate info" -- each tile links to
+// SearchResults.jsx's matching ?filter=, which uses this exact same
+// occupied/unoccupied/empty/for-sale test so the number on the tile
+// and the list behind it can never disagree.
+function StatTile({ value, label, sub, to }) {
   return (
-    <div style={{ ...cardStyle, padding: "18px 20px" }}>
+    <Link to={to} style={{ ...cardStyle, padding: "18px 20px", textDecoration: "none", display: "block" }}>
       <div style={{ fontFamily: fonts.display, fontSize: "30px", fontWeight: 700, color: colors.brandDark, lineHeight: 1 }}>
         {value === null ? "—" : value}
       </div>
-      <div style={{ fontSize: "12.5px", color: colors.inkSoft, marginTop: "6px" }}>{label}</div>
+      <div style={{ fontSize: "12.5px", color: colors.ink, marginTop: "6px" }}>{label}</div>
       {sub && <div style={{ fontSize: "11px", color: colors.inkSoft, opacity: 0.75, marginTop: "1px" }}>{sub}</div>}
-    </div>
+    </Link>
   );
 }
 
@@ -66,10 +71,10 @@ export default function Dashboard() {
       </h1>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", marginBottom: "20px" }}>
-        <StatTile value={stats?.occupied ?? null} label="Occupied pitches" sub="caravan & customer" />
-        <StatTile value={stats?.unoccupied ?? null} label="Unoccupied pitches" sub="caravan, no customer" />
-        <StatTile value={stats?.empty ?? null} label="Empty pitches" sub="no caravan sited" />
-        <StatTile value={stats?.forSale ?? null} label="Caravans for sale" />
+        <StatTile value={stats?.occupied ?? null} label="Occupied pitches" sub="caravan & customer" to="/search?filter=occupied" />
+        <StatTile value={stats?.unoccupied ?? null} label="Unoccupied pitches" sub="caravan, no customer" to="/search?filter=unoccupied" />
+        <StatTile value={stats?.empty ?? null} label="Empty pitches" sub="no caravan sited" to="/search?filter=empty" />
+        <StatTile value={stats?.forSale ?? null} label="Caravans for sale" to="/search?filter=forsale" />
       </div>
 
       <div style={{ ...cardStyle, padding: "20px 24px", marginBottom: "20px" }}>
