@@ -65,9 +65,8 @@ export default function Caravans() {
 
   return (
     <div style={{ padding: "24px", maxWidth: "700px", margin: "0 auto" }}>
-      <Link to="/" style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back</Link>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "8px 0 20px" }}>
-        <h1 style={{ fontFamily: fonts.display, color: colors.mossDark, margin: 0 }}>Caravans</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: 0 }}>Caravans</h1>
         <button onClick={() => navigate("/caravans/new")} style={buttonStyle.primary}>+ Add caravan</button>
       </div>
 
@@ -90,7 +89,7 @@ export default function Caravans() {
             <div style={{ fontWeight: 600 }}>
               {c.make} {c.model}
               {c.for_sale && (
-                <span style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 600, color: colors.moss, background: "#EAF3DE", padding: "2px 8px", borderRadius: "999px" }}>
+                <span style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 600, color: colors.brand, background: "#FBF1DA", padding: "2px 8px", borderRadius: "999px" }}>
                   For sale
                 </span>
               )}
@@ -104,7 +103,7 @@ export default function Caravans() {
             </div>
           </div>
           {c.key_number && (
-            <div style={{ fontFamily: fonts.mono, fontSize: "13px", color: colors.mossDark, background: colors.bg, padding: "4px 10px", borderRadius: "8px" }}>
+            <div style={{ fontFamily: fonts.mono, fontSize: "13px", color: colors.brandDark, background: colors.bg, padding: "4px 10px", borderRadius: "8px" }}>
               {c.key_number}
             </div>
           )}

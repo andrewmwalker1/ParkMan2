@@ -93,7 +93,7 @@ export default function UsersTab() {
   return (
     <div>
       <div style={{ marginBottom: "24px" }}>
-        <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.mossDark }}>Users</h2>
+        <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.brandDark }}>Users</h2>
         {error && <p style={{ color: colors.immediate, fontSize: "13px" }}>{error}</p>}
         {users.map((u) => (
           <div key={u.id} style={{ ...cardStyle, padding: "12px 16px", marginBottom: "8px" }}>
@@ -131,7 +131,7 @@ export default function UsersTab() {
                     </>
                   )}
                 </div>
-                {resendStatus[u.id] === "sent" && <p style={{ fontSize: "12px", color: colors.moss, margin: "6px 0 0" }}>Sign-in email sent</p>}
+                {resendStatus[u.id] === "sent" && <p style={{ fontSize: "12px", color: colors.success, margin: "6px 0 0" }}>Sign-in email sent</p>}
                 {resendStatus[u.id] === "error" && <p style={{ fontSize: "12px", color: colors.immediate, margin: "6px 0 0" }}>Failed to send — see message above</p>}
               </div>
             )}
@@ -141,14 +141,14 @@ export default function UsersTab() {
       </div>
 
       <div>
-        <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.mossDark }}>Invite a user</h2>
+        <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.brandDark }}>Invite a user</h2>
         <p style={{ fontSize: "13px", color: colors.inkSoft }}>Only people invited here can sign in — there's no public sign-up.</p>
         <form onSubmit={handleInvite} style={{ ...cardStyle, padding: "16px" }}>
           <input required type="email" value={invite.email} onChange={(e) => setInvite({ ...invite, email: e.target.value })} placeholder="Work email" style={fieldStyle} />
           <input required value={invite.displayName} onChange={(e) => setInvite({ ...invite, displayName: e.target.value })} placeholder="Display name" style={fieldStyle} />
 
           {inviteStatus === "sent" && (
-            <p style={{ color: colors.moss, fontSize: "13px" }}>
+            <p style={{ color: colors.success, fontSize: "13px" }}>
               Account created — tell them to go to the sign-in page and enter their email to get a link and code.
             </p>
           )}

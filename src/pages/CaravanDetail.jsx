@@ -158,7 +158,7 @@ export default function CaravanDetail() {
   return (
     <div style={{ padding: "24px", maxWidth: "600px", margin: "0 auto" }}>
       <Link to="/caravans" style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back</Link>
-      <h1 style={{ fontFamily: fonts.display, color: colors.mossDark, margin: "8px 0 20px" }}>
+      <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "8px 0 20px" }}>
         {isNew ? "New caravan" : `${form.make || ""} ${form.model || ""}`.trim() || "Caravan"}
       </h1>
 
@@ -238,7 +238,7 @@ export default function CaravanDetail() {
         </div>
 
         {error && <p style={{ color: colors.immediate, fontSize: "13px" }}>{error}</p>}
-        {status === "saved" && <p style={{ color: colors.moss, fontSize: "13px" }}>Saved.</p>}
+        {status === "saved" && <p style={{ color: colors.success, fontSize: "13px" }}>Saved.</p>}
 
         <div style={{ display: "flex", gap: "8px", marginBottom: "24px" }}>
           <button type="submit" disabled={status === "saving"} style={buttonStyle.primary}>

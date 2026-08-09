@@ -1,19 +1,32 @@
-// Field Journal design tokens -- same as Hub and Maintenance, reproduced
-// exactly for visual consistency across the Tree Tops app family. Don't
+// "Harbour" design tokens -- ParkMan2's own palette, chosen 9 Aug 2026
+// to move away from the Field Journal green shared with Hub/Maintenance
+// (Andy: didn't like the colourway) without copying CampManager's blue.
+// Deep teal-navy for structure (sidebar/topbar/headings), brass for
+// interactive accents, kept deliberately distinct from both. Don't
 // hardcode these hex values anywhere else.
 
 export const colors = {
-  bg: "#E7E2CC",
-  paper: "#FBF9F1",
-  ink: "#31382D",
-  inkSoft: "#78806E",
-  moss: "#5C7A4E",
-  mossDark: "#3F5837",
-  clay: "#A65A34",
-  gold: "#C9962F",
+  bg: "#F1F0EA",
+  paper: "#FFFFFF",
+  ink: "#1D2A2C",
+  inkSoft: "#5E7175",
+  brand: "#AC8330",
+  brandDark: "#17323A",
+  success: "#4B7A4F",
   immediate: "#8C3A22",
-  line: "#DDD6BC",
-  lineStrong: "#CBC2A0",
+  line: "#DDE3DF",
+  lineStrong: "#C7D0CC",
+};
+
+// Sidebar/topbar chrome -- always dark regardless of page theme, so it
+// reads as a fixed instrument panel rather than page content.
+export const chrome = {
+  sidebarBg: "#17323A",
+  sidebarActiveBg: "#1F424C",
+  sidebarInk: "#C4DBDF",
+  sidebarInkDim: "#7FA1A8",
+  topbarBg: "#102329",
+  wordmarkInk: "#E9F2F1",
 };
 
 export const fonts = {
@@ -37,7 +50,7 @@ export const cardStyle = {
 
 export const buttonStyle = {
   primary: {
-    background: colors.moss,
+    background: colors.brand,
     color: "#FFFFFF",
     border: "none",
     borderRadius: "999px",
@@ -48,7 +61,7 @@ export const buttonStyle = {
   },
   secondary: {
     background: "transparent",
-    color: colors.mossDark,
+    color: colors.brandDark,
     border: `1px solid ${colors.lineStrong}`,
     borderRadius: "999px",
     padding: "10px 20px",

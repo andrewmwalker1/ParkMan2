@@ -41,9 +41,8 @@ export default function Customers() {
 
   return (
     <div style={{ padding: "24px", maxWidth: "700px", margin: "0 auto" }}>
-      <Link to="/" style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back</Link>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "8px 0 20px" }}>
-        <h1 style={{ fontFamily: fonts.display, color: colors.mossDark, margin: 0 }}>Customers</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: 0 }}>Customers</h1>
         <button onClick={() => navigate("/customers/new")} style={buttonStyle.primary}>+ Add customer</button>
       </div>
 

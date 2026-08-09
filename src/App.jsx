@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/AuthContext.jsx";
+import Layout from "./components/Layout.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Admin from "./pages/Admin.jsx";
@@ -35,15 +36,17 @@ function AppShell() {
 
   return (
     <div style={pageStyle}>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/pitches" element={<Pitches />} />
-        <Route path="/customers" element={<Customers />} />
-        <Route path="/customers/:id" element={<CustomerDetail />} />
-        <Route path="/caravans" element={<Caravans />} />
-        <Route path="/caravans/:id" element={<CaravanDetail />} />
-      </Routes>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/pitches" element={<Pitches />} />
+          <Route path="/customers" element={<Customers />} />
+          <Route path="/customers/:id" element={<CustomerDetail />} />
+          <Route path="/caravans" element={<Caravans />} />
+          <Route path="/caravans/:id" element={<CaravanDetail />} />
+        </Routes>
+      </Layout>
     </div>
   );
 }

@@ -44,14 +44,14 @@ export default function Login() {
   return (
     <div style={{ ...pageStyle, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
       <div style={{ ...cardStyle, padding: "32px", maxWidth: "380px", width: "100%" }}>
-        <h1 style={{ fontFamily: fonts.display, fontWeight: 700, color: colors.mossDark, margin: "0 0 8px" }}>
+        <h1 style={{ fontFamily: fonts.display, fontWeight: 700, color: colors.brandDark, margin: "0 0 8px" }}>
           ParkMan2
         </h1>
         <p style={{ color: colors.inkSoft, marginTop: 0 }}>Sign in with your work email — we'll send you a link and a code.</p>
 
         {status === "sent" || status === "verifying" ? (
           <>
-            <p style={{ color: colors.moss, fontWeight: 600, marginBottom: "4px" }}>
+            <p style={{ color: colors.success, fontWeight: 600, marginBottom: "4px" }}>
               Check your email — tap the link, or enter the 8-digit code below.
             </p>
             <form onSubmit={handleVerifyCode}>

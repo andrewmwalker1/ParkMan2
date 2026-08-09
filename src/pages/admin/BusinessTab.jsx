@@ -66,7 +66,7 @@ export default function BusinessTab() {
 
   return (
     <div>
-      <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.mossDark, marginTop: 0 }}>Business</h2>
+      <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.brandDark, marginTop: 0 }}>Business</h2>
       <p style={{ fontSize: "13px", color: colors.inkSoft, marginTop: 0 }}>
         The company itself — used on generated documents once that's built. Park-specific contact details (address, VAT rate, bank details) live under Parks instead.
       </p>
@@ -96,7 +96,7 @@ export default function BusinessTab() {
         </div>
 
         {error && <p style={{ color: colors.immediate, fontSize: "13px" }}>{error}</p>}
-        {status === "saved" && <p style={{ color: colors.moss, fontSize: "13px" }}>Saved.</p>}
+        {status === "saved" && <p style={{ color: colors.success, fontSize: "13px" }}>Saved.</p>}
 
         <button type="submit" disabled={status === "saving"} style={buttonStyle.primary}>
           {status === "saving" ? "Saving…" : "Save changes"}

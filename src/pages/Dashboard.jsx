@@ -4,27 +4,22 @@ import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
 // Bump both on every deployed change, same convention as Hub/Maintenance --
 // gives Andy a quick way to confirm a push actually landed on the live site.
-const APP_VERSION = "0.2.0";
+const APP_VERSION = "0.3.0";
 const BUILD_DATE = "9 Aug 2026";
 
 export default function Dashboard() {
-  const { profile, business, signOut } = useAuth();
+  const { profile } = useAuth();
 
   return (
     <div style={{ padding: "24px", maxWidth: "640px", margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
-        <div>
-          <h1 style={{ fontFamily: fonts.display, color: colors.mossDark, margin: "0 0 4px" }}>ParkMan2</h1>
-          <p style={{ color: colors.inkSoft, margin: 0 }}>{business?.name}</p>
-        </div>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <Link to="/admin" style={{ ...buttonStyle.secondary, textDecoration: "none", display: "inline-block" }}>Admin</Link>
-          <button onClick={signOut} style={buttonStyle.secondary}>Sign out</button>
-        </div>
-      </div>
+      <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "0 0 20px" }}>
+        Welcome back, {profile?.display_name}.
+      </h1>
 
       <div style={{ ...cardStyle, padding: "20px 24px", marginBottom: "20px" }}>
-        <p style={{ color: colors.ink, margin: 0 }}>Signed in as {profile?.display_name}.</p>
+        <p style={{ color: colors.ink, margin: 0 }}>
+          Use the search bar above to jump straight to a customer, caravan, or pitch — or browse from the sections below.
+        </p>
       </div>
 
       <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>

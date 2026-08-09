@@ -13,6 +13,20 @@
     <style>
       * { box-sizing: border-box; }
       body { margin: 0; }
+
+      /* Persistent nav shell (src/components/Layout.jsx, Sidebar.jsx) --
+         media queries can't be expressed in inline styles, so the
+         structural (not colour) parts of the shell live here. Sidebar
+         collapses to a horizontal strip above the topbar below 720px. */
+      .pm2-shell { min-height: 100vh; display: flex; flex-direction: row; }
+      .pm2-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+      .pm2-sidebar-nav { display: flex; flex-direction: column; gap: 4px; }
+      .pm2-wordmark { margin: 0 6px 18px; }
+      @media (max-width: 720px) {
+        .pm2-shell { flex-direction: column; }
+        .pm2-sidebar-nav { flex-direction: row; flex-wrap: wrap; align-items: center; }
+        .pm2-wordmark { margin: 0 12px 0 0; }
+      }
     </style>
     <script>
       // Other half of the public/404.html GitHub Pages SPA fallback --

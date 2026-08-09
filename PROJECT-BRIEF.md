@@ -182,6 +182,37 @@ not as an afterthought:
   query --file`, which can't run multi-statement SQL files (see that
   script's comment for why).
 
+## UI shell & design direction (9 Aug 2026)
+
+Andy dropped the shared "Field Journal" moss-green theme (used by Hub and
+Maintenance) for ParkMan2 specifically — didn't like the colourway. He
+also shared a CampManager screenshot: persistent top bar with a global
+search, left side nav, dense tables. Direction taken: borrow the
+**structure** (persistent sidebar + top bar + search), not the look —
+explicitly not copying CampManager's blue.
+
+Three colour directions were mocked up (`src/lib/theme.js` token names in
+brackets) and Andy picked **C, "Harbour"**: deep teal-navy for the
+sidebar/topbar/headings (`chrome.sidebarBg` / `colors.brandDark`,
+`#17323A`) with a brass accent for buttons/active states
+(`colors.brand`, `#AC8330`). `colors.success` (`#4B7A4F`) was split out
+separately for genuine success states (Saved., "For sale") — the old
+green `moss` token had been doing double duty as both brand colour and
+success colour, which stopped making sense once brand went brass.
+
+Nav shell: `src/components/{Sidebar,Topbar,GlobalSearch,Layout}.jsx`,
+wrapping every authenticated route in `App.jsx`. Sidebar collapses to a
+horizontal strip above the topbar under 720px (CSS in `index.html`, not
+inline styles — inline styles can't do media queries).
+
+Search covers Customer (name/phone/email), Caravan (make/model/serial/key
+number) and Pitch (number only, not the "OP-B5" area-prefixed form —
+that needs a join/view, left for later). Results are a live dropdown,
+grouped by type, debounced 250ms, 2-char minimum. Pitch results deep-link
+via `/pitches?open=<id>` since Pitches has no dedicated detail route
+(inline modal) — Pitches.jsx reads that param on load and opens the
+matching row's edit modal.
+
 ## Data model (draft)
 
 Confirmed so far (Andy's own description, 6 Aug 2026):

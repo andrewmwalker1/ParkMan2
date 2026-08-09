@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient.js";
 import { suggestSortKey } from "../lib/sortKey.js";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
@@ -33,6 +33,7 @@ function blankForm(defaults) {
 }
 
 export default function Pitches() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [pitches, setPitches] = useState([]);
   const [areas, setAreas] = useState([]);
   const [bands, setBands] = useState([]);
@@ -61,6 +62,18 @@ export default function Pitches() {
   }
 
   useEffect(refresh, []);
+
+  // Global search (src/components/GlobalSearch.jsx) links straight to a
+  // pitch via ?open=<id> -- there's no dedicated /pitches/:id route since
+  // editing is an inline modal here, so this is how a search result opens
+  // the right one instead of just landing on the unfiltered list.
+  useEffect(() => {
+    const openId = searchParams.get("open");
+    if (!openId || pitches.length === 0) return;
+    const match = pitches.find((p) => p.id === openId);
+    if (match) openEdit(match);
+    setSearchParams({}, { replace: true });
+  }, [pitches, searchParams]);
 
   const visiblePitches = useMemo(() => {
     return pitches
@@ -140,15 +153,14 @@ export default function Pitches() {
 
   return (
     <div style={{ padding: "24px", maxWidth: "760px", margin: "0 auto" }}>
-      <Link to="/" style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back</Link>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "8px 0 20px" }}>
-        <h1 style={{ fontFamily: fonts.display, color: colors.mossDark, margin: 0 }}>Pitches</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: 0 }}>Pitches</h1>
         <button onClick={openCreate} disabled={!readyToCreate} style={buttonStyle.primary}>+ Add pitch</button>
       </div>
 
       {!readyToCreate && (
         <p style={{ fontSize: "13px", color: colors.inkSoft }}>
-          Add at least one Area, Pitch Type, and Pitch Status under <Link to="/admin" style={{ color: colors.moss }}>Admin</Link> before creating pitches.
+          Add at least one Area, Pitch Type, and Pitch Status under <Link to="/admin" style={{ color: colors.brand }}>Admin</Link> before creating pitches.
         </p>
       )}
 
@@ -188,7 +200,7 @@ export default function Pitches() {
       {form && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(49, 56, 45, 0.5)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px", overflowY: "auto", zIndex: 100 }}>
           <div style={{ ...cardStyle, padding: "20px", width: "100%", maxWidth: "440px" }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.mossDark, marginTop: 0 }}>
+            <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.brandDark, marginTop: 0 }}>
               {form.id ? "Edit pitch" : "New pitch"}
             </h2>
             <form onSubmit={handleSave}>

@@ -67,7 +67,7 @@ export default function SimpleLookupTab({ table, singularLabel, pluralLabel, ext
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-        <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.mossDark, margin: 0 }}>{pluralLabel}</h2>
+        <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.brandDark, margin: 0 }}>{pluralLabel}</h2>
         <button onClick={() => { setError(null); setForm(blankForm()); }} style={buttonStyle.primary}>+ Add {singularLabel.toLowerCase()}</button>
       </div>
       {error && <p style={{ color: colors.immediate, fontSize: "13px" }}>{error}</p>}
@@ -91,7 +91,7 @@ export default function SimpleLookupTab({ table, singularLabel, pluralLabel, ext
       {form && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(49, 56, 45, 0.5)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px", overflowY: "auto", zIndex: 100 }}>
           <div style={{ ...cardStyle, padding: "20px", width: "100%", maxWidth: "400px" }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.mossDark, marginTop: 0 }}>
+            <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.brandDark, marginTop: 0 }}>
               {form.id ? `Edit ${singularLabel.toLowerCase()}` : `New ${singularLabel.toLowerCase()}`}
             </h2>
             <form onSubmit={handleSave}>

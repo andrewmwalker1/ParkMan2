@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import BusinessTab from "./admin/BusinessTab.jsx";
 import UsersTab from "./admin/UsersTab.jsx";
 import ParksTab from "./admin/ParksTab.jsx";
@@ -40,16 +39,15 @@ export default function Admin() {
 
   return (
     <div style={{ padding: "24px", maxWidth: "760px", margin: "0 auto" }}>
-      <Link to="/" style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back</Link>
-      <h1 style={{ fontFamily: fonts.display, color: colors.mossDark, margin: "8px 0 0" }}>Admin</h1>
+      <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "0 0 16px" }}>Admin</h1>
       <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
         {ALL_TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
             style={{
-              border: `1px solid ${activeTab === t.key ? colors.mossDark : colors.lineStrong}`,
-              background: activeTab === t.key ? colors.mossDark : "transparent",
+              border: `1px solid ${activeTab === t.key ? colors.brandDark : colors.lineStrong}`,
+              background: activeTab === t.key ? colors.brandDark : "transparent",
               color: activeTab === t.key ? "#FFFFFF" : colors.inkSoft,
               borderRadius: "999px",
               padding: "8px 16px",
