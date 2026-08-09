@@ -76,9 +76,16 @@ export default function Pitches() {
   }, [pitches, searchParams]);
 
   const visiblePitches = useMemo(() => {
+    const needle = search.toLowerCase();
     return pitches
       .filter((p) => !areaFilter || p.area_id === areaFilter)
-      .filter((p) => !search || p.number.toLowerCase().includes(search.toLowerCase()))
+      .filter((p) => {
+        if (!needle) return true;
+        // Staff search by the on-screen "OP-B5" form (area code + number),
+        // not just the raw number -- see the same fix in SearchResults.jsx.
+        const combined = `${p.area?.code || ""}-${p.number}`.toLowerCase();
+        return combined.includes(needle) || p.number.toLowerCase().includes(needle);
+      })
       .sort((a, b) => {
         const areaCmp = (a.area?.code || "").localeCompare(b.area?.code || "");
         if (areaCmp !== 0) return areaCmp;
