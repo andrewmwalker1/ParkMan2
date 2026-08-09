@@ -17,6 +17,7 @@ export default function Caravans() {
   const [caravans, setCaravans] = useState([]);
   const [search, setSearch] = useState("");
   const [error, setError] = useState(null);
+  const [locations, setLocations] = useState({});
 
   useEffect(() => {
     supabase
@@ -26,6 +27,18 @@ export default function Caravans() {
       .then(({ data, error: err }) => {
         if (err) setError(err.message);
         else setCaravans(data || []);
+      });
+
+    supabase
+      .from("placement")
+      .select("caravan_id, pitch:pitch_id(number, area:area_id(code))")
+      .is("end_date", null)
+      .then(({ data }) => {
+        const map = {};
+        (data || []).forEach((p) => {
+          if (p.pitch) map[p.caravan_id] = `${p.pitch.area?.code}-${p.pitch.number}`;
+        });
+        setLocations(map);
       });
   }, []);
 
@@ -71,6 +84,9 @@ export default function Caravans() {
             </div>
             <div style={{ fontSize: "12px", color: colors.inkSoft }}>
               {[c.colour, c.type?.name, c.status?.name].filter(Boolean).join(" · ")}
+            </div>
+            <div style={{ fontSize: "12px", color: colors.inkSoft }}>
+              {locations[c.id] || "Off-park"}
             </div>
           </div>
           {c.key_number && (

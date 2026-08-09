@@ -24,7 +24,7 @@ const blank = {
   length: "", width: "", bedrooms: "", berths: "",
   key_number: "",
   pat_test_expiry: "", gas_test_expiry: "",
-  condition: "", for_sale: false,
+  condition_id: "", for_sale: false,
 };
 
 // A test date within 60 days (or already past) is worth calling out --
@@ -68,6 +68,7 @@ export default function CaravanDetail() {
   const [form, setForm] = useState(isNew ? blank : null);
   const [types, setTypes] = useState([]);
   const [statuses, setStatuses] = useState([]);
+  const [conditions, setConditions] = useState([]);
   const [placement, setPlacement] = useState(undefined); // undefined = not checked yet, null = off-park
   const [status, setStatus] = useState("idle"); // idle | saving | saved | error
   const [error, setError] = useState(null);
@@ -77,9 +78,11 @@ export default function CaravanDetail() {
     Promise.all([
       supabase.from("caravan_type").select("id, name").eq("business_id", profile.business_id).order("name"),
       supabase.from("caravan_status").select("id, name").eq("business_id", profile.business_id).order("name"),
-    ]).then(([{ data: t }, { data: s }]) => {
+      supabase.from("caravan_condition").select("id, name").eq("business_id", profile.business_id).order("name"),
+    ]).then(([{ data: t }, { data: s }, { data: c }]) => {
       setTypes(t || []);
       setStatuses(s || []);
+      setConditions(c || []);
     });
   }, [profile]);
 
@@ -118,7 +121,7 @@ export default function CaravanDetail() {
       for_sale: !!form.for_sale,
       pat_test_expiry: form.pat_test_expiry || null,
       gas_test_expiry: form.gas_test_expiry || null,
-      condition: form.condition,
+      condition_id: form.condition_id || null,
     };
 
     if (isNew) {
@@ -202,7 +205,10 @@ export default function CaravanDetail() {
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={labelStyle}>Condition</label>
-              <input value={form.condition || ""} onChange={(e) => setForm({ ...form, condition: e.target.value })} placeholder="e.g. New, Used" style={fieldStyle} />
+              <select value={form.condition_id || ""} onChange={(e) => setForm({ ...form, condition_id: e.target.value })} style={fieldStyle}>
+                <option value="">—</option>
+                {conditions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
             </div>
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: colors.inkSoft, marginTop: "4px" }}>

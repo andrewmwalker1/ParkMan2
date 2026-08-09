@@ -24,6 +24,7 @@ const ALL_TABS = [
   { key: "pitchStatuses", label: "Pitch Statuses", Component: () => <SimpleLookupTab table="pitch_status" singularLabel="Pitch status" pluralLabel="Pitch statuses" />, permission: "can_manage_parks" },
   { key: "caravanTypes", label: "Caravan Types", Component: () => <SimpleLookupTab table="caravan_type" singularLabel="Caravan type" pluralLabel="Caravan types" extraField={{ key: "default_licence_term_years", label: "Default licence term (years)", type: "number" }} />, permission: "can_manage_caravans" },
   { key: "caravanStatuses", label: "Caravan Statuses", Component: () => <SimpleLookupTab table="caravan_status" singularLabel="Caravan status" pluralLabel="Caravan statuses" />, permission: "can_manage_caravans" },
+  { key: "caravanConditions", label: "Caravan Conditions", Component: () => <SimpleLookupTab table="caravan_condition" singularLabel="Caravan condition" pluralLabel="Caravan conditions" />, permission: "can_manage_caravans" },
 ];
 
 export default function Admin() {
