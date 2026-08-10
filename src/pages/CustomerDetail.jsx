@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 import AddressFields from "./admin/AddressFields.jsx";
@@ -33,7 +33,9 @@ export default function CustomerDetail() {
   const { id } = useParams();
   const isNew = id === "new";
   const navigate = useNavigate();
+  const location = useLocation();
   const { profile } = useAuth();
+  const origin = location.state?.originPath ? location.state : { originPath: "/customers", originLabel: "Customers" };
 
   const [form, setForm] = useState(isNew ? blank : null);
   const [status, setStatus] = useState("idle"); // idle | saving | saved | error
@@ -92,7 +94,7 @@ export default function CustomerDetail() {
 
   return (
     <div style={{ padding: "24px", maxWidth: "600px", margin: "0 auto" }}>
-      <Link to="/customers" style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back</Link>
+      <Link to={origin.originPath} style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back to {origin.originLabel}</Link>
       <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "8px 0 20px" }}>
         {isNew ? "New customer" : `${form.customer1_first_name} ${form.customer1_surname}`}
       </h1>

@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient.js";
 import { suggestSortKey } from "../lib/sortKey.js";
+import { useAuth } from "../lib/AuthContext.jsx";
 import NotesSection from "../components/NotesSection.jsx";
+import AddressFields from "./admin/AddressFields.jsx";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
 const fieldStyle = {
@@ -167,11 +169,22 @@ function CustomerCard({ title, customer, onSave, onAssign, onRemove, blockedReas
       customer1_surname: form.customer1_surname,
       customer1_phone: form.customer1_phone,
       customer1_email: form.customer1_email,
+      customer1_receives_billing: !!form.customer1_receives_billing,
       customer2_title: form.customer2_title,
       customer2_first_name: form.customer2_first_name,
       customer2_surname: form.customer2_surname,
       customer2_phone: form.customer2_phone,
       customer2_email: form.customer2_email,
+      customer2_receives_billing: !!form.customer2_receives_billing,
+      correspondence_salutation: form.correspondence_salutation,
+      address_salutation: form.address_salutation,
+      street: form.street,
+      town: form.town,
+      county: form.county,
+      country: form.country,
+      postcode: form.postcode,
+      delivery_preference: form.delivery_preference,
+      mailing_list: !!form.mailing_list,
       nok1_name: form.nok1_name,
       nok1_relationship: form.nok1_relationship,
       nok1_phone: form.nok1_phone,
@@ -213,6 +226,10 @@ function CustomerCard({ title, customer, onSave, onAssign, onRemove, blockedReas
             <input placeholder="Phone" value={form.customer1_phone || ""} onChange={(e) => setForm({ ...form, customer1_phone: e.target.value })} style={fieldStyle} />
             <input type="email" placeholder="Email" value={form.customer1_email || ""} onChange={(e) => setForm({ ...form, customer1_email: e.target.value })} style={fieldStyle} />
           </div>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: colors.inkSoft, marginBottom: "10px" }}>
+            <input type="checkbox" checked={!!form.customer1_receives_billing} onChange={(e) => setForm({ ...form, customer1_receives_billing: e.target.checked })} />
+            Receives billing and correspondence
+          </label>
 
           <div style={{ display: "grid", gridTemplateColumns: "70px 1fr 1fr", gap: "10px" }}>
             <input placeholder="Title" value={form.customer2_title || ""} onChange={(e) => setForm({ ...form, customer2_title: e.target.value })} style={fieldStyle} />
@@ -222,6 +239,30 @@ function CustomerCard({ title, customer, onSave, onAssign, onRemove, blockedReas
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <input placeholder="Phone" value={form.customer2_phone || ""} onChange={(e) => setForm({ ...form, customer2_phone: e.target.value })} style={fieldStyle} />
             <input type="email" placeholder="Email" value={form.customer2_email || ""} onChange={(e) => setForm({ ...form, customer2_email: e.target.value })} style={fieldStyle} />
+          </div>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: colors.inkSoft, marginBottom: "10px" }}>
+            <input type="checkbox" checked={!!form.customer2_receives_billing} onChange={(e) => setForm({ ...form, customer2_receives_billing: e.target.checked })} />
+            Receives billing and correspondence
+          </label>
+
+          <div style={{ fontSize: "11px", fontWeight: 600, color: colors.inkSoft, textTransform: "uppercase", letterSpacing: "0.03em", margin: "6px 0 8px" }}>Address & correspondence</div>
+          <label style={labelStyle}>Correspondence salutation</label>
+          <input placeholder="e.g. Andy" value={form.correspondence_salutation || ""} onChange={(e) => setForm({ ...form, correspondence_salutation: e.target.value })} style={fieldStyle} />
+          <label style={labelStyle}>Address salutation</label>
+          <input placeholder="e.g. Mr & Mrs A Smith" value={form.address_salutation || ""} onChange={(e) => setForm({ ...form, address_salutation: e.target.value })} style={fieldStyle} />
+
+          <AddressFields form={form} setForm={setForm} />
+
+          <div style={{ display: "flex", gap: "16px", alignItems: "center", margin: "-2px 0 12px" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: colors.inkSoft }}>
+              <input type="radio" name={`delivery-${title}`} checked={form.delivery_preference === "email"} onChange={() => setForm({ ...form, delivery_preference: "email" })} /> Email
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: colors.inkSoft }}>
+              <input type="radio" name={`delivery-${title}`} checked={form.delivery_preference === "paper"} onChange={() => setForm({ ...form, delivery_preference: "paper" })} /> Paper
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: colors.inkSoft, marginLeft: "auto" }}>
+              <input type="checkbox" checked={!!form.mailing_list} onChange={(e) => setForm({ ...form, mailing_list: e.target.checked })} /> Mailing list
+            </label>
           </div>
 
           <div style={{ fontSize: "11px", fontWeight: 600, color: colors.inkSoft, textTransform: "uppercase", letterSpacing: "0.03em", margin: "6px 0 8px" }}>Next of kin</div>
@@ -241,7 +282,6 @@ function CustomerCard({ title, customer, onSave, onAssign, onRemove, blockedReas
           {status === "saved" && <p style={{ color: colors.success, fontSize: "13px" }}>Saved.</p>}
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <button type="submit" disabled={status === "saving"} style={buttonStyle.primary}>{status === "saving" ? "Saving…" : "Save changes"}</button>
-            <Link to={`/customers/${customer.id}`} style={smallLinkStyle}>Full customer record →</Link>
             {onRemove && <button type="button" onClick={onRemove} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Remove</button>}
           </div>
         </form>
@@ -271,9 +311,13 @@ export default function UnitDetail() {
   const [bands, setBands] = useState([]);
   const [pitchTypes, setPitchTypes] = useState([]);
   const [pitchStatuses, setPitchStatuses] = useState([]);
+  const { profile } = useAuth();
   const [caravan, setCaravan] = useState(null);
   const [caravanForm, setCaravanForm] = useState(null);
   const [caravanStatus, setCaravanStatus] = useState("idle");
+  const [caravanTypes, setCaravanTypes] = useState([]);
+  const [caravanStatuses, setCaravanStatuses] = useState([]);
+  const [caravanConditions, setCaravanConditions] = useState([]);
   const [pickingCaravan, setPickingCaravan] = useState(false);
   const [ownership, setOwnership] = useState(null);
   const [primaryCustomer, setPrimaryCustomer] = useState(null);
@@ -293,6 +337,19 @@ export default function UnitDetail() {
       setPitchStatuses(s || []);
     });
   }, []);
+
+  useEffect(() => {
+    if (!profile) return;
+    Promise.all([
+      supabase.from("caravan_type").select("id, name").eq("business_id", profile.business_id).order("name"),
+      supabase.from("caravan_status").select("id, name").eq("business_id", profile.business_id).order("name"),
+      supabase.from("caravan_condition").select("id, name").eq("business_id", profile.business_id).order("name"),
+    ]).then(([{ data: t }, { data: s }, { data: c }]) => {
+      setCaravanTypes(t || []);
+      setCaravanStatuses(s || []);
+      setCaravanConditions(c || []);
+    });
+  }, [profile]);
 
   function refresh() {
     supabase
@@ -337,7 +394,7 @@ export default function UnitDetail() {
         }
         const { data: car } = await supabase.from("caravan").select("*").eq("id", pl.caravan_id).single();
         setCaravan(car);
-        setCaravanForm(car);
+        setCaravanForm({ ...car, model_year: car.model_year ?? "", build_year: car.build_year ?? "", length: car.length ?? "", width: car.width ?? "", bedrooms: car.bedrooms ?? "", berths: car.berths ?? "" });
 
         const { data: own } = await supabase
           .from("ownership")
@@ -429,12 +486,23 @@ export default function UnitDetail() {
     const { error: err } = await supabase
       .from("caravan")
       .update({
+        type_id: caravanForm.type_id || null,
+        status_id: caravanForm.status_id || null,
         make: caravanForm.make,
         model: caravanForm.model,
+        colour: caravanForm.colour,
+        serial_number: caravanForm.serial_number,
+        model_year: caravanForm.model_year === "" ? null : Number(caravanForm.model_year),
+        build_year: caravanForm.build_year === "" ? null : Number(caravanForm.build_year),
+        length: caravanForm.length === "" ? null : Number(caravanForm.length),
+        width: caravanForm.width === "" ? null : Number(caravanForm.width),
+        bedrooms: caravanForm.bedrooms === "" ? null : Number(caravanForm.bedrooms),
+        berths: caravanForm.berths === "" ? null : Number(caravanForm.berths),
         key_number: caravanForm.key_number,
         for_sale: !!caravanForm.for_sale,
         pat_test_expiry: caravanForm.pat_test_expiry || null,
         gas_test_expiry: caravanForm.gas_test_expiry || null,
+        condition_id: caravanForm.condition_id || null,
       })
       .eq("id", caravan.id);
     if (err) {
@@ -584,7 +652,43 @@ export default function UnitDetail() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 <div><label style={labelStyle}>Make</label><input value={caravanForm.make || ""} onChange={(e) => setCaravanForm({ ...caravanForm, make: e.target.value })} style={fieldStyle} /></div>
                 <div><label style={labelStyle}>Model</label><input value={caravanForm.model || ""} onChange={(e) => setCaravanForm({ ...caravanForm, model: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Colour</label><input value={caravanForm.colour || ""} onChange={(e) => setCaravanForm({ ...caravanForm, colour: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Serial number</label><input value={caravanForm.serial_number || ""} onChange={(e) => setCaravanForm({ ...caravanForm, serial_number: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Model year</label><input type="number" value={caravanForm.model_year} onChange={(e) => setCaravanForm({ ...caravanForm, model_year: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Build year</label><input type="number" value={caravanForm.build_year} onChange={(e) => setCaravanForm({ ...caravanForm, build_year: e.target.value })} style={fieldStyle} /></div>
               </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <div>
+                  <label style={labelStyle}>Type</label>
+                  <select value={caravanForm.type_id || ""} onChange={(e) => setCaravanForm({ ...caravanForm, type_id: e.target.value })} style={fieldStyle}>
+                    <option value="">—</option>
+                    {caravanTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Status</label>
+                  <select value={caravanForm.status_id || ""} onChange={(e) => setCaravanForm({ ...caravanForm, status_id: e.target.value })} style={fieldStyle}>
+                    <option value="">—</option>
+                    {caravanStatuses.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={labelStyle}>Condition</label>
+                  <select value={caravanForm.condition_id || ""} onChange={(e) => setCaravanForm({ ...caravanForm, condition_id: e.target.value })} style={fieldStyle}>
+                    <option value="">—</option>
+                    {caravanConditions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <div><label style={labelStyle}>Length (ft)</label><input type="number" step="0.1" value={caravanForm.length} onChange={(e) => setCaravanForm({ ...caravanForm, length: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Width (ft)</label><input type="number" step="0.1" value={caravanForm.width} onChange={(e) => setCaravanForm({ ...caravanForm, width: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Bedrooms</label><input type="number" min="0" value={caravanForm.bedrooms} onChange={(e) => setCaravanForm({ ...caravanForm, bedrooms: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Berths</label><input type="number" min="0" value={caravanForm.berths} onChange={(e) => setCaravanForm({ ...caravanForm, berths: e.target.value })} style={fieldStyle} /></div>
+              </div>
+
               <label style={labelStyle}>Key number</label>
               <input value={caravanForm.key_number || ""} onChange={(e) => setCaravanForm({ ...caravanForm, key_number: e.target.value })} style={fieldStyle} />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
@@ -598,7 +702,6 @@ export default function UnitDetail() {
               {caravanStatus === "saved" && <p style={{ color: colors.success, fontSize: "13px" }}>Saved.</p>}
               <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 <button type="submit" disabled={caravanStatus === "saving"} style={buttonStyle.primary}>{caravanStatus === "saving" ? "Saving…" : "Save changes"}</button>
-                <Link to={`/caravans/${caravan.id}`} style={smallLinkStyle}>Full caravan record →</Link>
                 <button type="button" onClick={removeCaravan} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Unsite</button>
               </div>
             </form>

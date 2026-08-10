@@ -80,7 +80,7 @@ export default function OperationalTable({
               <td style={tdStyle}>
                 {r.customer ? (
                   <>
-                    <Link to={r.pitch ? `/units/${r.pitch.id}?tab=customer` : `/customers/${r.customer.id}`} state={r.pitch ? originState : undefined} style={linkStyle}>{customerName(r.customer)}</Link>
+                    <Link to={`/customers/${r.customer.id}`} state={originState} style={linkStyle}>{customerName(r.customer)}</Link>
                     {customerContact(r.customer) && <div style={subStyle}>{customerContact(r.customer)}</div>}
                   </>
                 ) : (
@@ -90,7 +90,7 @@ export default function OperationalTable({
               <td style={tdStyle}>
                 {r.caravan ? (
                   <>
-                    <Link to={r.pitch ? `/units/${r.pitch.id}?tab=caravan` : `/caravans/${r.caravan.id}`} state={r.pitch ? originState : undefined} style={linkStyle}>{caravanLabel(r.caravan)}</Link>
+                    <Link to={`/caravans/${r.caravan.id}`} state={originState} style={linkStyle}>{caravanLabel(r.caravan)}</Link>
                     {r.caravan.key_number && <div style={{ ...subStyle, fontFamily: fonts.mono }}>{r.caravan.key_number}</div>}
                   </>
                 ) : (

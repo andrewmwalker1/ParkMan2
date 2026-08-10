@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
@@ -63,7 +63,9 @@ export default function CaravanDetail() {
   const { id } = useParams();
   const isNew = id === "new";
   const navigate = useNavigate();
+  const location = useLocation();
   const { profile } = useAuth();
+  const origin = location.state?.originPath ? location.state : { originPath: "/caravans", originLabel: "Caravans" };
 
   const [form, setForm] = useState(isNew ? blank : null);
   const [types, setTypes] = useState([]);
@@ -157,7 +159,7 @@ export default function CaravanDetail() {
 
   return (
     <div style={{ padding: "24px", maxWidth: "600px", margin: "0 auto" }}>
-      <Link to="/caravans" style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back</Link>
+      <Link to={origin.originPath} style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back to {origin.originLabel}</Link>
       <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "8px 0 20px" }}>
         {isNew ? "New caravan" : `${form.make || ""} ${form.model || ""}`.trim() || "Caravan"}
       </h1>
