@@ -4,6 +4,10 @@ import { useAuth } from "../lib/AuthContext.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 import AddressFields from "./admin/AddressFields.jsx";
 import NotesSection from "../components/NotesSection.jsx";
+import LightningButton from "../components/LightningButton.jsx";
+import StartLetterButton from "../components/StartLetterButton.jsx";
+import { buildCorrespondenceSalutation, buildAddressSalutation, buildMailto } from "../lib/salutations.js";
+import { resolveCustomerPitchAndCaravan } from "../lib/resolveCustomerPitch.js";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
 const fieldStyle = {
@@ -40,6 +44,16 @@ export default function CustomerDetail() {
   const [form, setForm] = useState(isNew ? blank : null);
   const [status, setStatus] = useState("idle"); // idle | saving | saved | error
   const [error, setError] = useState(null);
+  const [pitch, setPitch] = useState(null);
+  const [caravan, setCaravan] = useState(null);
+
+  useEffect(() => {
+    if (isNew) return;
+    resolveCustomerPitchAndCaravan(id).then(({ pitch, caravan }) => {
+      setPitch(pitch);
+      setCaravan(caravan);
+    });
+  }, [id]);
 
   useEffect(() => {
     // React Router reuses this component instance across id changes (same
@@ -138,11 +152,17 @@ export default function CustomerDetail() {
           <div style={sectionLabelStyle}>Address & correspondence</div>
           <div>
             <label style={labelStyle}>Correspondence salutation</label>
-            <input placeholder="e.g. Andy" value={form.correspondence_salutation || ""} onChange={(e) => setForm({ ...form, correspondence_salutation: e.target.value })} style={fieldStyle} />
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input placeholder="e.g. Andy" value={form.correspondence_salutation || ""} onChange={(e) => setForm({ ...form, correspondence_salutation: e.target.value })} style={{ ...fieldStyle, flex: 1 }} />
+              <LightningButton title="Build from names" onClick={() => setForm({ ...form, correspondence_salutation: buildCorrespondenceSalutation(form) })} />
+            </div>
           </div>
           <div>
             <label style={labelStyle}>Address salutation</label>
-            <input placeholder="e.g. Mr & Mrs A Smith" value={form.address_salutation || ""} onChange={(e) => setForm({ ...form, address_salutation: e.target.value })} style={fieldStyle} />
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input placeholder="e.g. Mr & Mrs A Smith" value={form.address_salutation || ""} onChange={(e) => setForm({ ...form, address_salutation: e.target.value })} style={{ ...fieldStyle, flex: 1 }} />
+              <LightningButton title="Build from names" onClick={() => setForm({ ...form, address_salutation: buildAddressSalutation(form) })} />
+            </div>
           </div>
 
           <AddressFields form={form} setForm={setForm} />
@@ -183,8 +203,12 @@ export default function CustomerDetail() {
           <button type="submit" disabled={status === "saving"} style={buttonStyle.primary}>
             {status === "saving" ? "Saving…" : isNew ? "Create customer" : "Save changes"}
           </button>
+          {!isNew && form.customer1_email && (
+            <a href={buildMailto(form)} style={{ ...buttonStyle.secondary, textDecoration: "none" }}>✉ Email</a>
+          )}
+          {!isNew && <StartLetterButton customer={form} pitch={pitch} caravan={caravan} />}
           {!isNew && (
-            <button type="button" onClick={handleDelete} style={{ ...buttonStyle.secondary, color: colors.immediate }}>Delete</button>
+            <button type="button" onClick={handleDelete} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Delete</button>
           )}
         </div>
       </form>

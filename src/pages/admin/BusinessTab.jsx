@@ -26,7 +26,7 @@ export default function BusinessTab() {
     if (!profile) return;
     supabase
       .from("business")
-      .select("id, name, street, town, county, country, postcode, phone, email, vat_number, company_number")
+      .select("id, name, street, town, county, country, postcode, phone, email, vat_number, company_number, documents_folder_label")
       .eq("id", profile.business_id)
       .single()
       .then(({ data, error: err }) => {
@@ -52,6 +52,7 @@ export default function BusinessTab() {
         email: form.email,
         vat_number: form.vat_number,
         company_number: form.company_number,
+        documents_folder_label: form.documents_folder_label,
       })
       .eq("id", form.id);
     if (err) {
@@ -94,6 +95,17 @@ export default function BusinessTab() {
             <input value={form.company_number || ""} onChange={(e) => setForm({ ...form, company_number: e.target.value })} style={fieldStyle} />
           </div>
         </div>
+
+        <label style={labelStyle}>Shared documents folder</label>
+        <input
+          value={form.documents_folder_label || ""}
+          onChange={(e) => setForm({ ...form, documents_folder_label: e.target.value })}
+          placeholder={String.raw`e.g. \\SERVER\Share\Customer Letters`}
+          style={fieldStyle}
+        />
+        <p style={{ fontSize: "12px", color: colors.inkSoft, marginTop: "-6px" }}>
+          A reminder of where letters should be filed — browsers can't open a folder from a path automatically, so whoever starts a letter will still pick this folder once via "Connect documents folder".
+        </p>
 
         {error && <p style={{ color: colors.immediate, fontSize: "13px" }}>{error}</p>}
         {status === "saved" && <p style={{ color: colors.success, fontSize: "13px" }}>Saved.</p>}

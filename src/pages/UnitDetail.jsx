@@ -5,6 +5,9 @@ import { suggestSortKey } from "../lib/sortKey.js";
 import { useAuth } from "../lib/AuthContext.jsx";
 import NotesSection from "../components/NotesSection.jsx";
 import AddressFields from "./admin/AddressFields.jsx";
+import LightningButton from "../components/LightningButton.jsx";
+import StartLetterButton from "../components/StartLetterButton.jsx";
+import { buildCorrespondenceSalutation, buildAddressSalutation, buildMailto } from "../lib/salutations.js";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
 const fieldStyle = {
@@ -150,7 +153,7 @@ function CaravanPicker({ onPick }) {
 // stay on the full Customer record, reached via the link at the
 // bottom), and separately handles the "no one assigned yet" state via
 // CustomerPicker.
-function CustomerCard({ title, customer, editable, onSave, onAssign, onRemove, blockedReason }) {
+function CustomerCard({ title, customer, editable, onSave, onAssign, onRemove, blockedReason, pitch, caravan }) {
   const [form, setForm] = useState(null);
   const [status, setStatus] = useState("idle");
   const [picking, setPicking] = useState(false);
@@ -253,9 +256,15 @@ function CustomerCard({ title, customer, editable, onSave, onAssign, onRemove, b
 
           <div style={{ fontSize: "11px", fontWeight: 600, color: colors.inkSoft, textTransform: "uppercase", letterSpacing: "0.03em", margin: "6px 0 8px" }}>Address & correspondence</div>
           <label style={labelStyle}>Correspondence salutation</label>
-          <input disabled={!editable} placeholder="e.g. Andy" value={form.correspondence_salutation || ""} onChange={(e) => setForm({ ...form, correspondence_salutation: e.target.value })} style={fieldStyle} />
+          <div style={{ display: "flex", gap: "8px" }}>
+            <input disabled={!editable} placeholder="e.g. Andy" value={form.correspondence_salutation || ""} onChange={(e) => setForm({ ...form, correspondence_salutation: e.target.value })} style={{ ...fieldStyle, flex: 1 }} />
+            <LightningButton disabled={!editable} title="Build from names" onClick={() => setForm({ ...form, correspondence_salutation: buildCorrespondenceSalutation(form) })} />
+          </div>
           <label style={labelStyle}>Address salutation</label>
-          <input disabled={!editable} placeholder="e.g. Mr & Mrs A Smith" value={form.address_salutation || ""} onChange={(e) => setForm({ ...form, address_salutation: e.target.value })} style={fieldStyle} />
+          <div style={{ display: "flex", gap: "8px" }}>
+            <input disabled={!editable} placeholder="e.g. Mr & Mrs A Smith" value={form.address_salutation || ""} onChange={(e) => setForm({ ...form, address_salutation: e.target.value })} style={{ ...fieldStyle, flex: 1 }} />
+            <LightningButton disabled={!editable} title="Build from names" onClick={() => setForm({ ...form, address_salutation: buildAddressSalutation(form) })} />
+          </div>
 
           <AddressFields form={form} setForm={setForm} disabled={!editable} />
 
@@ -286,12 +295,12 @@ function CustomerCard({ title, customer, editable, onSave, onAssign, onRemove, b
           ))}
 
           {status === "saved" && <p style={{ color: colors.success, fontSize: "13px" }}>Saved.</p>}
-          {editable && (
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              <button type="submit" disabled={status === "saving"} style={buttonStyle.primary}>{status === "saving" ? "Saving…" : "Save changes"}</button>
-              {onRemove && <button type="button" onClick={onRemove} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Remove</button>}
-            </div>
-          )}
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            {editable && <button type="submit" disabled={status === "saving"} style={buttonStyle.primary}>{status === "saving" ? "Saving…" : "Save changes"}</button>}
+            {form.customer1_email && <a href={buildMailto(form)} style={{ ...buttonStyle.secondary, textDecoration: "none" }}>✉ Email</a>}
+            <StartLetterButton customer={form} pitch={pitch} caravan={caravan} />
+            {editable && onRemove && <button type="button" onClick={onRemove} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Remove</button>}
+          </div>
         </form>
       )}
 
@@ -653,6 +662,8 @@ export default function UnitDetail() {
             blockedReason={!caravan ? "Add a caravan to this pitch first." : null}
             onSave={(fields) => saveCustomer(primaryCustomer.id, fields)}
             onAssign={(id) => assignOwner("primary", id)}
+            pitch={pitch}
+            caravan={caravan}
           />
 
           {primaryCustomer && (
@@ -663,6 +674,8 @@ export default function UnitDetail() {
               onSave={(fields) => saveCustomer(secondaryCustomer.id, fields)}
               onAssign={(id) => assignOwner("secondary", id)}
               onRemove={secondaryCustomer ? removeSecondary : null}
+              pitch={pitch}
+              caravan={caravan}
             />
           )}
         </>
