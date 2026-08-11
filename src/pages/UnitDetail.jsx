@@ -28,12 +28,13 @@ function expiryStatus(dateStr) {
   return null;
 }
 
-function ExpiryField({ label, value, onChange }) {
+function ExpiryField({ label, value, onChange, disabled }) {
   const status = expiryStatus(value);
   return (
     <div>
       <label style={labelStyle}>{label}</label>
       <input
+        disabled={disabled}
         type="date"
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
@@ -149,7 +150,7 @@ function CaravanPicker({ onPick }) {
 // stay on the full Customer record, reached via the link at the
 // bottom), and separately handles the "no one assigned yet" state via
 // CustomerPicker.
-function CustomerCard({ title, customer, onSave, onAssign, onRemove, blockedReason }) {
+function CustomerCard({ title, customer, editable, onSave, onAssign, onRemove, blockedReason }) {
   const [form, setForm] = useState(null);
   const [status, setStatus] = useState("idle");
   const [picking, setPicking] = useState(false);
@@ -158,7 +159,10 @@ function CustomerCard({ title, customer, onSave, onAssign, onRemove, blockedReas
     setForm(customer ? { ...customer } : null);
     setStatus("idle");
     setPicking(false);
-  }, [customer?.id]);
+    // Re-syncing on `editable` too means flipping out of edit mode (Done,
+    // whether or not you saved) always discards any unsaved changes and
+    // shows the last-saved data -- the same "Cancel" behaviour for free.
+  }, [customer?.id, editable]);
 
   async function handleSave(e) {
     e.preventDefault();
@@ -203,10 +207,12 @@ function CustomerCard({ title, customer, onSave, onAssign, onRemove, blockedReas
 
       {blockedReason && !customer && <p style={{ fontSize: "13px", color: colors.inkSoft }}>{blockedReason}</p>}
 
-      {!blockedReason && !customer && !picking && (
+      {!blockedReason && !customer && !editable && <p style={{ fontSize: "13px", color: colors.inkSoft }}>No owner assigned.</p>}
+
+      {!blockedReason && !customer && editable && !picking && (
         <button type="button" onClick={() => setPicking(true)} style={buttonStyle.secondary}>+ Assign owner</button>
       )}
-      {!customer && picking && (
+      {!customer && editable && picking && (
         <CustomerPicker
           onPick={(id) => {
             setPicking(false);
@@ -218,50 +224,50 @@ function CustomerCard({ title, customer, onSave, onAssign, onRemove, blockedReas
       {customer && form && (
         <form onSubmit={handleSave}>
           <div style={{ display: "grid", gridTemplateColumns: "70px 1fr 1fr", gap: "10px" }}>
-            <input placeholder="Title" value={form.customer1_title || ""} onChange={(e) => setForm({ ...form, customer1_title: e.target.value })} style={fieldStyle} />
-            <input required placeholder="First name" value={form.customer1_first_name || ""} onChange={(e) => setForm({ ...form, customer1_first_name: e.target.value })} style={fieldStyle} />
-            <input required placeholder="Surname" value={form.customer1_surname || ""} onChange={(e) => setForm({ ...form, customer1_surname: e.target.value })} style={fieldStyle} />
+            <input disabled={!editable} placeholder="Title" value={form.customer1_title || ""} onChange={(e) => setForm({ ...form, customer1_title: e.target.value })} style={fieldStyle} />
+            <input disabled={!editable} required placeholder="First name" value={form.customer1_first_name || ""} onChange={(e) => setForm({ ...form, customer1_first_name: e.target.value })} style={fieldStyle} />
+            <input disabled={!editable} required placeholder="Surname" value={form.customer1_surname || ""} onChange={(e) => setForm({ ...form, customer1_surname: e.target.value })} style={fieldStyle} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <input placeholder="Phone" value={form.customer1_phone || ""} onChange={(e) => setForm({ ...form, customer1_phone: e.target.value })} style={fieldStyle} />
-            <input type="email" placeholder="Email" value={form.customer1_email || ""} onChange={(e) => setForm({ ...form, customer1_email: e.target.value })} style={fieldStyle} />
+            <input disabled={!editable} placeholder="Phone" value={form.customer1_phone || ""} onChange={(e) => setForm({ ...form, customer1_phone: e.target.value })} style={fieldStyle} />
+            <input disabled={!editable} type="email" placeholder="Email" value={form.customer1_email || ""} onChange={(e) => setForm({ ...form, customer1_email: e.target.value })} style={fieldStyle} />
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: colors.inkSoft, marginBottom: "10px" }}>
-            <input type="checkbox" checked={!!form.customer1_receives_billing} onChange={(e) => setForm({ ...form, customer1_receives_billing: e.target.checked })} />
+            <input disabled={!editable} type="checkbox" checked={!!form.customer1_receives_billing} onChange={(e) => setForm({ ...form, customer1_receives_billing: e.target.checked })} />
             Receives billing and correspondence
           </label>
 
           <div style={{ display: "grid", gridTemplateColumns: "70px 1fr 1fr", gap: "10px" }}>
-            <input placeholder="Title" value={form.customer2_title || ""} onChange={(e) => setForm({ ...form, customer2_title: e.target.value })} style={fieldStyle} />
-            <input placeholder="First name" value={form.customer2_first_name || ""} onChange={(e) => setForm({ ...form, customer2_first_name: e.target.value })} style={fieldStyle} />
-            <input placeholder="Surname" value={form.customer2_surname || ""} onChange={(e) => setForm({ ...form, customer2_surname: e.target.value })} style={fieldStyle} />
+            <input disabled={!editable} placeholder="Title" value={form.customer2_title || ""} onChange={(e) => setForm({ ...form, customer2_title: e.target.value })} style={fieldStyle} />
+            <input disabled={!editable} placeholder="First name" value={form.customer2_first_name || ""} onChange={(e) => setForm({ ...form, customer2_first_name: e.target.value })} style={fieldStyle} />
+            <input disabled={!editable} placeholder="Surname" value={form.customer2_surname || ""} onChange={(e) => setForm({ ...form, customer2_surname: e.target.value })} style={fieldStyle} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <input placeholder="Phone" value={form.customer2_phone || ""} onChange={(e) => setForm({ ...form, customer2_phone: e.target.value })} style={fieldStyle} />
-            <input type="email" placeholder="Email" value={form.customer2_email || ""} onChange={(e) => setForm({ ...form, customer2_email: e.target.value })} style={fieldStyle} />
+            <input disabled={!editable} placeholder="Phone" value={form.customer2_phone || ""} onChange={(e) => setForm({ ...form, customer2_phone: e.target.value })} style={fieldStyle} />
+            <input disabled={!editable} type="email" placeholder="Email" value={form.customer2_email || ""} onChange={(e) => setForm({ ...form, customer2_email: e.target.value })} style={fieldStyle} />
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: colors.inkSoft, marginBottom: "10px" }}>
-            <input type="checkbox" checked={!!form.customer2_receives_billing} onChange={(e) => setForm({ ...form, customer2_receives_billing: e.target.checked })} />
+            <input disabled={!editable} type="checkbox" checked={!!form.customer2_receives_billing} onChange={(e) => setForm({ ...form, customer2_receives_billing: e.target.checked })} />
             Receives billing and correspondence
           </label>
 
           <div style={{ fontSize: "11px", fontWeight: 600, color: colors.inkSoft, textTransform: "uppercase", letterSpacing: "0.03em", margin: "6px 0 8px" }}>Address & correspondence</div>
           <label style={labelStyle}>Correspondence salutation</label>
-          <input placeholder="e.g. Andy" value={form.correspondence_salutation || ""} onChange={(e) => setForm({ ...form, correspondence_salutation: e.target.value })} style={fieldStyle} />
+          <input disabled={!editable} placeholder="e.g. Andy" value={form.correspondence_salutation || ""} onChange={(e) => setForm({ ...form, correspondence_salutation: e.target.value })} style={fieldStyle} />
           <label style={labelStyle}>Address salutation</label>
-          <input placeholder="e.g. Mr & Mrs A Smith" value={form.address_salutation || ""} onChange={(e) => setForm({ ...form, address_salutation: e.target.value })} style={fieldStyle} />
+          <input disabled={!editable} placeholder="e.g. Mr & Mrs A Smith" value={form.address_salutation || ""} onChange={(e) => setForm({ ...form, address_salutation: e.target.value })} style={fieldStyle} />
 
-          <AddressFields form={form} setForm={setForm} />
+          <AddressFields form={form} setForm={setForm} disabled={!editable} />
 
           <div style={{ display: "flex", gap: "16px", alignItems: "center", margin: "-2px 0 12px" }}>
             <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: colors.inkSoft }}>
-              <input type="radio" name={`delivery-${title}`} checked={form.delivery_preference === "email"} onChange={() => setForm({ ...form, delivery_preference: "email" })} /> Email
+              <input disabled={!editable} type="radio" name={`delivery-${title}`} checked={form.delivery_preference === "email"} onChange={() => setForm({ ...form, delivery_preference: "email" })} /> Email
             </label>
             <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: colors.inkSoft }}>
-              <input type="radio" name={`delivery-${title}`} checked={form.delivery_preference === "paper"} onChange={() => setForm({ ...form, delivery_preference: "paper" })} /> Paper
+              <input disabled={!editable} type="radio" name={`delivery-${title}`} checked={form.delivery_preference === "paper"} onChange={() => setForm({ ...form, delivery_preference: "paper" })} /> Paper
             </label>
             <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: colors.inkSoft, marginLeft: "auto" }}>
-              <input type="checkbox" checked={!!form.mailing_list} onChange={(e) => setForm({ ...form, mailing_list: e.target.checked })} /> Mailing list
+              <input disabled={!editable} type="checkbox" checked={!!form.mailing_list} onChange={(e) => setForm({ ...form, mailing_list: e.target.checked })} /> Mailing list
             </label>
           </div>
 
@@ -269,21 +275,23 @@ function CustomerCard({ title, customer, onSave, onAssign, onRemove, blockedReas
           {[1, 2].map((n) => (
             <div key={n} style={{ marginBottom: "6px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "10px" }}>
-                <input placeholder="Name" value={form[`nok${n}_name`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_name`]: e.target.value })} style={fieldStyle} />
-                <input placeholder="Relationship" value={form[`nok${n}_relationship`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_relationship`]: e.target.value })} style={fieldStyle} />
+                <input disabled={!editable} placeholder="Name" value={form[`nok${n}_name`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_name`]: e.target.value })} style={fieldStyle} />
+                <input disabled={!editable} placeholder="Relationship" value={form[`nok${n}_relationship`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_relationship`]: e.target.value })} style={fieldStyle} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                <input placeholder="Contact number" value={form[`nok${n}_phone`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_phone`]: e.target.value })} style={fieldStyle} />
-                <input type="email" placeholder="Email" value={form[`nok${n}_email`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_email`]: e.target.value })} style={fieldStyle} />
+                <input disabled={!editable} placeholder="Contact number" value={form[`nok${n}_phone`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_phone`]: e.target.value })} style={fieldStyle} />
+                <input disabled={!editable} type="email" placeholder="Email" value={form[`nok${n}_email`] || ""} onChange={(e) => setForm({ ...form, [`nok${n}_email`]: e.target.value })} style={fieldStyle} />
               </div>
             </div>
           ))}
 
           {status === "saved" && <p style={{ color: colors.success, fontSize: "13px" }}>Saved.</p>}
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            <button type="submit" disabled={status === "saving"} style={buttonStyle.primary}>{status === "saving" ? "Saving…" : "Save changes"}</button>
-            {onRemove && <button type="button" onClick={onRemove} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Remove</button>}
-          </div>
+          {editable && (
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <button type="submit" disabled={status === "saving"} style={buttonStyle.primary}>{status === "saving" ? "Saving…" : "Save changes"}</button>
+              {onRemove && <button type="button" onClick={onRemove} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Remove</button>}
+            </div>
+          )}
         </form>
       )}
 
@@ -304,6 +312,10 @@ export default function UnitDetail() {
   const origin = location.state?.originPath ? location.state : { originPath: "/pitches", originLabel: "Pitches" };
 
   const [tab, setTab] = useState(["customer", "caravan", "pitch"].includes(initialTab) ? initialTab : "customer");
+  const { profile, hasPermission } = useAuth();
+  const canEditUnits = hasPermission("can_edit_units");
+  const [editing, setEditing] = useState(false);
+  const editable = canEditUnits && editing;
   const [pitch, setPitch] = useState(null);
   const [pitchForm, setPitchForm] = useState(null);
   const [pitchStatus, setPitchStatus] = useState("idle");
@@ -311,7 +323,6 @@ export default function UnitDetail() {
   const [bands, setBands] = useState([]);
   const [pitchTypes, setPitchTypes] = useState([]);
   const [pitchStatuses, setPitchStatuses] = useState([]);
-  const { profile } = useAuth();
   const [caravan, setCaravan] = useState(null);
   const [caravanForm, setCaravanForm] = useState(null);
   const [caravanStatus, setCaravanStatus] = useState("idle");
@@ -422,6 +433,7 @@ export default function UnitDetail() {
   useEffect(refresh, [pitchId]);
   useEffect(() => setPitchStatus("idle"), [pitchId]);
   useEffect(() => setPickingCaravan(false), [pitchId]);
+  useEffect(() => setEditing(false), [tab, pitchId]);
 
   // Number stores the area prefix directly (see PROJECT-BRIEF.md), so
   // switching Area mid-edit swaps the prefix in place -- same logic as
@@ -608,11 +620,36 @@ export default function UnitDetail() {
         ))}
       </div>
 
+      {canEditUnits ? (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "12px" }}>
+          {editing ? (
+            <button
+              type="button"
+              onClick={() => {
+                // Discards any unsaved pitch/caravan field edits by
+                // re-pulling from the DB -- CustomerCard does the same
+                // trick internally by re-syncing its form on `editable`.
+                refresh();
+                setEditing(false);
+              }}
+              style={buttonStyle.secondary}
+            >
+              Done editing
+            </button>
+          ) : (
+            <button type="button" onClick={() => setEditing(true)} style={buttonStyle.secondary}>Edit</button>
+          )}
+        </div>
+      ) : (
+        <p style={{ color: colors.inkSoft, fontSize: "13px", marginBottom: "12px" }}>You have view-only access to this screen.</p>
+      )}
+
       {tab === "customer" && (
         <>
           <CustomerCard
             title="Primary customer"
             customer={primaryCustomer}
+            editable={editable}
             blockedReason={!caravan ? "Add a caravan to this pitch first." : null}
             onSave={(fields) => saveCustomer(primaryCustomer.id, fields)}
             onAssign={(id) => assignOwner("primary", id)}
@@ -622,6 +659,7 @@ export default function UnitDetail() {
             <CustomerCard
               title="Secondary customer (optional)"
               customer={secondaryCustomer}
+              editable={editable}
               onSave={(fields) => saveCustomer(secondaryCustomer.id, fields)}
               onAssign={(id) => assignOwner("secondary", id)}
               onRemove={secondaryCustomer ? removeSecondary : null}
@@ -636,10 +674,10 @@ export default function UnitDetail() {
           {!caravan && !pickingCaravan && (
             <>
               <p style={{ fontSize: "13px", color: colors.inkSoft }}>No caravan currently sited on this pitch.</p>
-              <button type="button" onClick={() => setPickingCaravan(true)} style={buttonStyle.secondary}>+ Assign caravan</button>
+              {editable && <button type="button" onClick={() => setPickingCaravan(true)} style={buttonStyle.secondary}>+ Assign caravan</button>}
             </>
           )}
-          {!caravan && pickingCaravan && (
+          {!caravan && editable && pickingCaravan && (
             <CaravanPicker
               onPick={(id) => {
                 setPickingCaravan(false);
@@ -650,32 +688,32 @@ export default function UnitDetail() {
           {caravan && caravanForm && (
             <form onSubmit={handleSaveCaravan}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                <div><label style={labelStyle}>Make</label><input value={caravanForm.make || ""} onChange={(e) => setCaravanForm({ ...caravanForm, make: e.target.value })} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Model</label><input value={caravanForm.model || ""} onChange={(e) => setCaravanForm({ ...caravanForm, model: e.target.value })} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Colour</label><input value={caravanForm.colour || ""} onChange={(e) => setCaravanForm({ ...caravanForm, colour: e.target.value })} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Serial number</label><input value={caravanForm.serial_number || ""} onChange={(e) => setCaravanForm({ ...caravanForm, serial_number: e.target.value })} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Model year</label><input type="number" value={caravanForm.model_year} onChange={(e) => setCaravanForm({ ...caravanForm, model_year: e.target.value })} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Build year</label><input type="number" value={caravanForm.build_year} onChange={(e) => setCaravanForm({ ...caravanForm, build_year: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Make</label><input disabled={!editable} value={caravanForm.make || ""} onChange={(e) => setCaravanForm({ ...caravanForm, make: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Model</label><input disabled={!editable} value={caravanForm.model || ""} onChange={(e) => setCaravanForm({ ...caravanForm, model: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Colour</label><input disabled={!editable} value={caravanForm.colour || ""} onChange={(e) => setCaravanForm({ ...caravanForm, colour: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Serial number</label><input disabled={!editable} value={caravanForm.serial_number || ""} onChange={(e) => setCaravanForm({ ...caravanForm, serial_number: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Model year</label><input disabled={!editable} type="number" value={caravanForm.model_year} onChange={(e) => setCaravanForm({ ...caravanForm, model_year: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Build year</label><input disabled={!editable} type="number" value={caravanForm.build_year} onChange={(e) => setCaravanForm({ ...caravanForm, build_year: e.target.value })} style={fieldStyle} /></div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 <div>
                   <label style={labelStyle}>Type</label>
-                  <select value={caravanForm.type_id || ""} onChange={(e) => setCaravanForm({ ...caravanForm, type_id: e.target.value })} style={fieldStyle}>
+                  <select disabled={!editable} value={caravanForm.type_id || ""} onChange={(e) => setCaravanForm({ ...caravanForm, type_id: e.target.value })} style={fieldStyle}>
                     <option value="">—</option>
                     {caravanTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label style={labelStyle}>Status</label>
-                  <select value={caravanForm.status_id || ""} onChange={(e) => setCaravanForm({ ...caravanForm, status_id: e.target.value })} style={fieldStyle}>
+                  <select disabled={!editable} value={caravanForm.status_id || ""} onChange={(e) => setCaravanForm({ ...caravanForm, status_id: e.target.value })} style={fieldStyle}>
                     <option value="">—</option>
                     {caravanStatuses.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </div>
                 <div style={{ gridColumn: "1 / -1" }}>
                   <label style={labelStyle}>Condition</label>
-                  <select value={caravanForm.condition_id || ""} onChange={(e) => setCaravanForm({ ...caravanForm, condition_id: e.target.value })} style={fieldStyle}>
+                  <select disabled={!editable} value={caravanForm.condition_id || ""} onChange={(e) => setCaravanForm({ ...caravanForm, condition_id: e.target.value })} style={fieldStyle}>
                     <option value="">—</option>
                     {caravanConditions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
@@ -683,27 +721,29 @@ export default function UnitDetail() {
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                <div><label style={labelStyle}>Length (ft)</label><input type="number" step="0.1" value={caravanForm.length} onChange={(e) => setCaravanForm({ ...caravanForm, length: e.target.value })} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Width (ft)</label><input type="number" step="0.1" value={caravanForm.width} onChange={(e) => setCaravanForm({ ...caravanForm, width: e.target.value })} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Bedrooms</label><input type="number" min="0" value={caravanForm.bedrooms} onChange={(e) => setCaravanForm({ ...caravanForm, bedrooms: e.target.value })} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Berths</label><input type="number" min="0" value={caravanForm.berths} onChange={(e) => setCaravanForm({ ...caravanForm, berths: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Length (ft)</label><input disabled={!editable} type="number" step="0.1" value={caravanForm.length} onChange={(e) => setCaravanForm({ ...caravanForm, length: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Width (ft)</label><input disabled={!editable} type="number" step="0.1" value={caravanForm.width} onChange={(e) => setCaravanForm({ ...caravanForm, width: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Bedrooms</label><input disabled={!editable} type="number" min="0" value={caravanForm.bedrooms} onChange={(e) => setCaravanForm({ ...caravanForm, bedrooms: e.target.value })} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Berths</label><input disabled={!editable} type="number" min="0" value={caravanForm.berths} onChange={(e) => setCaravanForm({ ...caravanForm, berths: e.target.value })} style={fieldStyle} /></div>
               </div>
 
               <label style={labelStyle}>Key number</label>
-              <input value={caravanForm.key_number || ""} onChange={(e) => setCaravanForm({ ...caravanForm, key_number: e.target.value })} style={fieldStyle} />
+              <input disabled={!editable} value={caravanForm.key_number || ""} onChange={(e) => setCaravanForm({ ...caravanForm, key_number: e.target.value })} style={fieldStyle} />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                <ExpiryField label="PAT test expiry" value={caravanForm.pat_test_expiry} onChange={(v) => setCaravanForm({ ...caravanForm, pat_test_expiry: v })} />
-                <ExpiryField label="Gas test expiry" value={caravanForm.gas_test_expiry} onChange={(v) => setCaravanForm({ ...caravanForm, gas_test_expiry: v })} />
+                <ExpiryField label="PAT test expiry" value={caravanForm.pat_test_expiry} onChange={(v) => setCaravanForm({ ...caravanForm, pat_test_expiry: v })} disabled={!editable} />
+                <ExpiryField label="Gas test expiry" value={caravanForm.gas_test_expiry} onChange={(v) => setCaravanForm({ ...caravanForm, gas_test_expiry: v })} disabled={!editable} />
               </div>
               <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: colors.inkSoft, marginBottom: "10px" }}>
-                <input type="checkbox" checked={!!caravanForm.for_sale} onChange={(e) => setCaravanForm({ ...caravanForm, for_sale: e.target.checked })} />
+                <input disabled={!editable} type="checkbox" checked={!!caravanForm.for_sale} onChange={(e) => setCaravanForm({ ...caravanForm, for_sale: e.target.checked })} />
                 For sale
               </label>
               {caravanStatus === "saved" && <p style={{ color: colors.success, fontSize: "13px" }}>Saved.</p>}
-              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                <button type="submit" disabled={caravanStatus === "saving"} style={buttonStyle.primary}>{caravanStatus === "saving" ? "Saving…" : "Save changes"}</button>
-                <button type="button" onClick={removeCaravan} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Unsite</button>
-              </div>
+              {editable && (
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <button type="submit" disabled={caravanStatus === "saving"} style={buttonStyle.primary}>{caravanStatus === "saving" ? "Saving…" : "Save changes"}</button>
+                  <button type="button" onClick={removeCaravan} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Unsite</button>
+                </div>
+              )}
             </form>
           )}
           {caravan && <NotesSection table="caravan_note" idColumn="caravan_id" id={caravan.id} />}
@@ -715,18 +755,19 @@ export default function UnitDetail() {
           <div style={sectionLabelStyle}>Pitch</div>
           <form onSubmit={handleSavePitch}>
             <label style={labelStyle}>Area</label>
-            <select required value={pitchForm.area_id} onChange={(e) => handlePitchAreaChange(e.target.value)} style={fieldStyle}>
+            <select disabled={!editable} required value={pitchForm.area_id} onChange={(e) => handlePitchAreaChange(e.target.value)} style={fieldStyle}>
               {areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
 
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "10px" }}>
               <div>
                 <label style={labelStyle}>Number</label>
-                <input required value={pitchForm.number} onChange={(e) => handlePitchNumberChange(e.target.value)} placeholder="e.g. OP-A16" style={fieldStyle} />
+                <input disabled={!editable} required value={pitchForm.number} onChange={(e) => handlePitchNumberChange(e.target.value)} placeholder="e.g. OP-A16" style={fieldStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Sort key</label>
                 <input
+                  disabled={!editable}
                   required
                   value={pitchForm.sort_key}
                   onChange={(e) => setPitchForm({ ...pitchForm, sort_key: e.target.value, sortKeyTouched: true })}
@@ -736,7 +777,7 @@ export default function UnitDetail() {
             </div>
 
             <label style={labelStyle}>Pitch band <span style={{ fontWeight: 400 }}>(optional)</span></label>
-            <select value={pitchForm.pitch_band_id} onChange={(e) => setPitchForm({ ...pitchForm, pitch_band_id: e.target.value })} style={fieldStyle}>
+            <select disabled={!editable} value={pitchForm.pitch_band_id} onChange={(e) => setPitchForm({ ...pitchForm, pitch_band_id: e.target.value })} style={fieldStyle}>
               <option value="">No band set</option>
               {bandsForArea.map((b) => <option key={b.id} value={b.id}>{b.code}</option>)}
             </select>
@@ -744,34 +785,34 @@ export default function UnitDetail() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
               <div>
                 <label style={labelStyle}>Type</label>
-                <select required value={pitchForm.type_id} onChange={(e) => setPitchForm({ ...pitchForm, type_id: e.target.value })} style={fieldStyle}>
+                <select disabled={!editable} required value={pitchForm.type_id} onChange={(e) => setPitchForm({ ...pitchForm, type_id: e.target.value })} style={fieldStyle}>
                   {pitchTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
               <div>
                 <label style={labelStyle}>Status</label>
-                <select required value={pitchForm.status_id} onChange={(e) => setPitchForm({ ...pitchForm, status_id: e.target.value })} style={fieldStyle}>
+                <select disabled={!editable} required value={pitchForm.status_id} onChange={(e) => setPitchForm({ ...pitchForm, status_id: e.target.value })} style={fieldStyle}>
                   {pitchStatuses.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div>
                 <label style={labelStyle}>Capacity</label>
-                <input required type="number" min="1" value={pitchForm.capacity} onChange={(e) => setPitchForm({ ...pitchForm, capacity: e.target.value })} style={fieldStyle} />
+                <input disabled={!editable} required type="number" min="1" value={pitchForm.capacity} onChange={(e) => setPitchForm({ ...pitchForm, capacity: e.target.value })} style={fieldStyle} />
               </div>
               <div />
               <div>
                 <label style={labelStyle}>Length (ft, indicative)</label>
-                <input type="number" step="0.1" value={pitchForm.length} onChange={(e) => setPitchForm({ ...pitchForm, length: e.target.value })} style={fieldStyle} />
+                <input disabled={!editable} type="number" step="0.1" value={pitchForm.length} onChange={(e) => setPitchForm({ ...pitchForm, length: e.target.value })} style={fieldStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Width (ft, indicative)</label>
-                <input type="number" step="0.1" value={pitchForm.width} onChange={(e) => setPitchForm({ ...pitchForm, width: e.target.value })} style={fieldStyle} />
+                <input disabled={!editable} type="number" step="0.1" value={pitchForm.width} onChange={(e) => setPitchForm({ ...pitchForm, width: e.target.value })} style={fieldStyle} />
               </div>
             </div>
 
             {pitchStatus === "saved" && <p style={{ color: colors.success, fontSize: "13px" }}>Saved.</p>}
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              <button type="submit" disabled={pitchStatus === "saving"} style={buttonStyle.primary}>{pitchStatus === "saving" ? "Saving…" : "Save changes"}</button>
+              {editable && <button type="submit" disabled={pitchStatus === "saving"} style={buttonStyle.primary}>{pitchStatus === "saving" ? "Saving…" : "Save changes"}</button>}
               <Link to={`/invoices/new?pitch=${pitchId}`} style={smallLinkStyle}>+ Create invoice for this pitch →</Link>
             </div>
           </form>

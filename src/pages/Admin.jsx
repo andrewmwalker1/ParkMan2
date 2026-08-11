@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import BusinessTab from "./admin/BusinessTab.jsx";
 import UsersTab from "./admin/UsersTab.jsx";
+import RolesTab from "./admin/RolesTab.jsx";
 import ParksTab from "./admin/ParksTab.jsx";
 import SeasonsTab from "./admin/SeasonsTab.jsx";
 import AreasTab from "./admin/AreasTab.jsx";
@@ -19,6 +20,7 @@ import { colors, fonts } from "../lib/theme.js";
 const ALL_TABS = [
   { key: "business", label: "Business", Component: BusinessTab, permission: "can_manage_business" },
   { key: "users", label: "Users", Component: UsersTab, permission: "can_manage_users" },
+  { key: "roles", label: "User Rights", Component: RolesTab, permission: "can_manage_users" },
   { key: "parks", label: "Parks", Component: ParksTab, permission: "can_manage_parks" },
   { key: "seasons", label: "Seasons", Component: SeasonsTab, permission: "can_manage_parks" },
   { key: "areas", label: "Areas", Component: AreasTab, permission: "can_manage_parks" },

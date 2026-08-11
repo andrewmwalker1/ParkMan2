@@ -19,28 +19,28 @@ const labelStyle = { display: "block", fontSize: "12px", color: colors.inkSoft, 
 // line), and Country was missing (defaults UK). Broken into real
 // fields rather than one free-text block (unlike CampManager's
 // printout display) so mail merge has real fields to merge into.
-export default function AddressFields({ form, setForm }) {
+export default function AddressFields({ form, setForm, disabled }) {
   return (
     <>
       <label style={labelStyle}>Street</label>
-      <textarea rows={2} value={form.street || ""} onChange={(e) => setForm({ ...form, street: e.target.value })} style={textareaStyle} />
+      <textarea disabled={disabled} rows={2} value={form.street || ""} onChange={(e) => setForm({ ...form, street: e.target.value })} style={textareaStyle} />
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
         <div>
           <label style={labelStyle}>Town</label>
-          <input value={form.town || ""} onChange={(e) => setForm({ ...form, town: e.target.value })} style={fieldStyle} />
+          <input disabled={disabled} value={form.town || ""} onChange={(e) => setForm({ ...form, town: e.target.value })} style={fieldStyle} />
         </div>
         <div>
           <label style={labelStyle}>County</label>
-          <input value={form.county || ""} onChange={(e) => setForm({ ...form, county: e.target.value })} style={fieldStyle} />
+          <input disabled={disabled} value={form.county || ""} onChange={(e) => setForm({ ...form, county: e.target.value })} style={fieldStyle} />
         </div>
         <div>
           <label style={labelStyle}>Country</label>
-          <input value={form.country || ""} onChange={(e) => setForm({ ...form, country: e.target.value })} style={fieldStyle} />
+          <input disabled={disabled} value={form.country || ""} onChange={(e) => setForm({ ...form, country: e.target.value })} style={fieldStyle} />
         </div>
         <div>
           <label style={labelStyle}>Postcode</label>
-          <input value={form.postcode || ""} onChange={(e) => setForm({ ...form, postcode: e.target.value })} style={fieldStyle} />
+          <input disabled={disabled} value={form.postcode || ""} onChange={(e) => setForm({ ...form, postcode: e.target.value })} style={fieldStyle} />
         </div>
       </div>
     </>
