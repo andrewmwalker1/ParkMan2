@@ -4,10 +4,11 @@ import { useAuth } from "../lib/AuthContext.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
-// Bump both on every deployed change, same convention as Hub/Maintenance --
-// gives Andy a quick way to confirm a push actually landed on the live site.
-const APP_VERSION = "0.4.0";
-const BUILD_DATE = "9 Aug 2026";
+// __APP_VERSION__/__GIT_SHA__/__BUILD_TIME__ are injected by vite.config.js
+// at build time -- unlike a manually maintained "last bumped" string, this
+// can't go stale, and the SHA lets Andy check a live-site footer against
+// `git log` directly to confirm a specific push actually deployed.
+const BUILD_DATE = new Date(__BUILD_TIME__).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
 // Andy (9 Aug 2026): dashboard starts with pitch occupancy and caravans
 // for sale, and "there will be more when we move onto billing and bring
@@ -90,7 +91,7 @@ export default function Dashboard() {
       </div>
 
       <p style={{ textAlign: "center", fontSize: "10.5px", color: colors.inkSoft, opacity: 0.6, marginTop: "22px" }}>
-        ParkMan2 v{APP_VERSION} · built {BUILD_DATE}
+        ParkMan2 v{__APP_VERSION__} · built {BUILD_DATE} · {__GIT_SHA__}
       </p>
     </div>
   );
