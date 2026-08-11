@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabaseClient.js";
 import AddressFields from "./admin/AddressFields.jsx";
 import NotesSection from "../components/NotesSection.jsx";
 import LightningButton from "../components/LightningButton.jsx";
-import StartLetterButton from "../components/StartLetterButton.jsx";
+import DocumentsPanel from "../components/DocumentsPanel.jsx";
 import { buildCorrespondenceSalutation, buildAddressSalutation, buildMailto } from "../lib/salutations.js";
 import { resolveCustomerPitchAndCaravan } from "../lib/resolveCustomerPitch.js";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
@@ -206,12 +206,17 @@ export default function CustomerDetail() {
           {!isNew && form.customer1_email && (
             <a href={buildMailto(form)} style={{ ...buttonStyle.secondary, textDecoration: "none" }}>✉ Email</a>
           )}
-          {!isNew && <StartLetterButton customer={form} pitch={pitch} caravan={caravan} />}
           {!isNew && (
             <button type="button" onClick={handleDelete} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Delete</button>
           )}
         </div>
       </form>
+
+      {!isNew && (
+        <div style={{ ...cardStyle, padding: "20px 24px", marginBottom: "16px" }}>
+          <DocumentsPanel customer={form} pitch={pitch} caravan={caravan} />
+        </div>
+      )}
 
       {!isNew && (
         <div style={{ ...cardStyle, padding: "20px 24px" }}>

@@ -6,7 +6,7 @@ import { useAuth } from "../lib/AuthContext.jsx";
 import NotesSection from "../components/NotesSection.jsx";
 import AddressFields from "./admin/AddressFields.jsx";
 import LightningButton from "../components/LightningButton.jsx";
-import StartLetterButton from "../components/StartLetterButton.jsx";
+import DocumentsPanel from "../components/DocumentsPanel.jsx";
 import { buildCorrespondenceSalutation, buildAddressSalutation, buildMailto } from "../lib/salutations.js";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
@@ -153,7 +153,7 @@ function CaravanPicker({ onPick }) {
 // stay on the full Customer record, reached via the link at the
 // bottom), and separately handles the "no one assigned yet" state via
 // CustomerPicker.
-function CustomerCard({ title, customer, editable, onSave, onAssign, onRemove, blockedReason, pitch, caravan }) {
+function CustomerCard({ title, customer, editable, onSave, onAssign, onRemove, blockedReason }) {
   const [form, setForm] = useState(null);
   const [status, setStatus] = useState("idle");
   const [picking, setPicking] = useState(false);
@@ -298,7 +298,6 @@ function CustomerCard({ title, customer, editable, onSave, onAssign, onRemove, b
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             {editable && <button type="submit" disabled={status === "saving"} style={buttonStyle.primary}>{status === "saving" ? "Saving…" : "Save changes"}</button>}
             {form.customer1_email && <a href={buildMailto(form)} style={{ ...buttonStyle.secondary, textDecoration: "none" }}>✉ Email</a>}
-            <StartLetterButton customer={form} pitch={pitch} caravan={caravan} />
             {editable && onRemove && <button type="button" onClick={onRemove} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Remove</button>}
           </div>
         </form>
@@ -320,7 +319,7 @@ export default function UnitDetail() {
   // instead of always assuming Pitches.
   const origin = location.state?.originPath ? location.state : { originPath: "/pitches", originLabel: "Pitches" };
 
-  const [tab, setTab] = useState(["customer", "caravan", "pitch"].includes(initialTab) ? initialTab : "customer");
+  const [tab, setTab] = useState(["customer", "caravan", "pitch", "documents"].includes(initialTab) ? initialTab : "customer");
   const { profile, hasPermission } = useAuth();
   const canEditUnits = hasPermission("can_edit_units");
   const [editing, setEditing] = useState(false);
@@ -596,6 +595,7 @@ export default function UnitDetail() {
     { key: "customer", label: "Customer" },
     { key: "caravan", label: "Caravan" },
     { key: "pitch", label: "Pitch" },
+    { key: "documents", label: "Documents" },
   ];
 
   return (
@@ -662,8 +662,6 @@ export default function UnitDetail() {
             blockedReason={!caravan ? "Add a caravan to this pitch first." : null}
             onSave={(fields) => saveCustomer(primaryCustomer.id, fields)}
             onAssign={(id) => assignOwner("primary", id)}
-            pitch={pitch}
-            caravan={caravan}
           />
 
           {primaryCustomer && (
@@ -674,8 +672,6 @@ export default function UnitDetail() {
               onSave={(fields) => saveCustomer(secondaryCustomer.id, fields)}
               onAssign={(id) => assignOwner("secondary", id)}
               onRemove={secondaryCustomer ? removeSecondary : null}
-              pitch={pitch}
-              caravan={caravan}
             />
           )}
         </>
@@ -830,6 +826,23 @@ export default function UnitDetail() {
             </div>
           </form>
           <NotesSection table="pitch_note" idColumn="pitch_id" id={pitchId} />
+        </div>
+      )}
+
+      {tab === "documents" && (
+        <div style={{ ...cardStyle, padding: "20px 24px", marginBottom: "16px" }}>
+          {!primaryCustomer ? (
+            <p style={{ fontSize: "13px", color: colors.inkSoft }}>Assign a customer on the Customer tab first.</p>
+          ) : (
+            <>
+              <DocumentsPanel customer={primaryCustomer} pitch={pitch} caravan={caravan} label="Primary customer" />
+              {secondaryCustomer && (
+                <div style={{ marginTop: "20px", paddingTop: "20px", borderTop: `1px solid ${colors.line}` }}>
+                  <DocumentsPanel customer={secondaryCustomer} pitch={pitch} caravan={caravan} label="Secondary customer" />
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>

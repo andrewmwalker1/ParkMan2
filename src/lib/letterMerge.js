@@ -84,17 +84,6 @@ export function buildLetterMergeData({ customer, pitch, caravan, business }) {
   };
 }
 
-// Folder name convention: "{pitch number} - {surname}", both surnames
-// when they differ, no pitch number segment when there isn't one (e.g.
-// letters started from the standalone Customer screen for someone with
-// no sited caravan/pitch).
-export function buildLetterFolderName(customer, pitchNumber) {
-  const s1 = (customer.customer1_surname || "").trim();
-  const s2 = (customer.customer2_surname || "").trim();
-  const surnames = s2 && s2.toLowerCase() !== s1.toLowerCase() ? `${s1} & ${s2}` : s1;
-  return pitchNumber ? `${pitchNumber} - ${surnames}` : surnames;
-}
-
 export function mergeDocxTemplate(templateArrayBuffer, data) {
   const zip = new PizZip(templateArrayBuffer);
   const doc = new Docxtemplater(zip, {
