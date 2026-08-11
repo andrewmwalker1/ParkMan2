@@ -13,13 +13,16 @@ export default function LetterTemplatesTab() {
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState("idle"); // idle | uploading | error
   const [error, setError] = useState(null);
+  const [updatingId, setUpdatingId] = useState(null);
   const fileInputRef = useRef(null);
+  const updateInputRef = useRef(null);
+  const updateTargetRef = useRef(null);
 
   function refresh() {
     if (!profile) return;
     supabase
       .from("letter_template")
-      .select("id, name, storage_path, created_at")
+      .select("id, name, storage_path, created_at, updated_at")
       .eq("business_id", profile.business_id)
       .order("name")
       .then(({ data, error: err }) => {
@@ -57,6 +60,41 @@ export default function LetterTemplatesTab() {
     setFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     setStatus("idle");
+    refresh();
+  }
+
+  function handleUpdateClick(template) {
+    updateTargetRef.current = template;
+    if (updateInputRef.current) {
+      updateInputRef.current.value = "";
+      updateInputRef.current.click();
+    }
+  }
+
+  async function handleUpdateFileChosen(e) {
+    const newFile = e.target.files?.[0];
+    const template = updateTargetRef.current;
+    if (!newFile || !template) return;
+
+    setUpdatingId(template.id);
+    setError(null);
+
+    const { error: uploadErr } = await supabase.storage.from(BUCKET).upload(template.storage_path, newFile, { upsert: true });
+    if (uploadErr) {
+      setUpdatingId(null);
+      setError(uploadErr.message);
+      return;
+    }
+
+    const { error: updateErr } = await supabase
+      .from("letter_template")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", template.id);
+    setUpdatingId(null);
+    if (updateErr) {
+      setError(updateErr.message);
+      return;
+    }
     refresh();
   }
 
@@ -102,10 +140,22 @@ export default function LetterTemplatesTab() {
         </button>
       </form>
 
+      <input ref={updateInputRef} type="file" accept=".docx" onChange={handleUpdateFileChosen} style={{ display: "none" }} />
+
       {templates.map((t) => (
         <div key={t.id} style={{ ...cardStyle, padding: "12px 16px", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "480px" }}>
-          <span style={{ fontSize: "13.5px" }}>{t.name}</span>
-          <button type="button" onClick={() => handleDelete(t)} style={{ ...buttonStyle.secondary, color: colors.immediate, padding: "6px 14px" }}>Delete</button>
+          <span style={{ fontSize: "13.5px" }}>
+            {t.name}
+            {t.updated_at && t.updated_at !== t.created_at && (
+              <span style={{ color: colors.inkSoft, fontSize: "11.5px" }}> · updated {new Date(t.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+            )}
+          </span>
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button type="button" disabled={updatingId === t.id} onClick={() => handleUpdateClick(t)} style={{ ...buttonStyle.secondary, padding: "6px 14px" }}>
+              {updatingId === t.id ? "Updating…" : "Update"}
+            </button>
+            <button type="button" onClick={() => handleDelete(t)} style={{ ...buttonStyle.secondary, color: colors.immediate, padding: "6px 14px" }}>Delete</button>
+          </div>
         </div>
       ))}
       {templates.length === 0 && <p style={{ color: colors.inkSoft, fontSize: "13px" }}>No templates yet.</p>}
