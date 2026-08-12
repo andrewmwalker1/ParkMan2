@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { renderAsync } from "docx-preview";
 import { useAuth } from "../lib/AuthContext.jsx";
 import { supabase } from "../lib/supabaseClient.js";
-import { buildLetterMergeData, mergeDocxTemplate } from "../lib/letterMerge.js";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
 const BUCKET = "customer-documents";
@@ -41,25 +40,22 @@ function downloadBlob(blob, fileName) {
   URL.revokeObjectURL(url);
 }
 
-// The document register for one customer -- create a letter from a
-// template, import an existing file (scan, PDF, photo), and view or
-// search everything that's been filed for them. Files live in Supabase
-// Storage (not a local/shared drive -- Andy, 11 Aug 2026: "nothing else
-// needs to access the documents", so there's no reason to fight browser
-// folder-permission and drive-letter quirks for files only this app
-// ever needs to open).
-export default function DocumentsPanel({ customer, pitch, caravan, label }) {
+// The document register for one customer -- import an existing file
+// (scan, PDF, photo, letter), and view or search everything that's
+// been filed for them. Files live in Supabase Storage (not a local/
+// shared drive -- Andy, 11 Aug 2026: "nothing else needs to access the
+// documents", so there's no reason to fight browser folder-permission
+// and drive-letter quirks for files only this app ever needs to open).
+// Generating a document from a letter template used to live here too
+// (Andy, 12 Aug 2026: removed for now, "it's not going to work how I
+// want it to" -- letter templates themselves are untouched under
+// Admin > Letter Templates for whenever that's redesigned).
+export default function DocumentsPanel({ customer, label }) {
   const { profile } = useAuth();
 
-  const [templates, setTemplates] = useState([]);
   const [documents, setDocuments] = useState([]);
-  const [business, setBusiness] = useState(null);
   const [search, setSearch] = useState("");
   const [error, setError] = useState(null);
-
-  const [createDescription, setCreateDescription] = useState("");
-  const [templateId, setTemplateId] = useState("");
-  const [creating, setCreating] = useState(false);
 
   const [importDescription, setImportDescription] = useState("");
   const [importFile, setImportFile] = useState(null);
@@ -85,15 +81,6 @@ export default function DocumentsPanel({ customer, pitch, caravan, label }) {
       });
   }
 
-  useEffect(() => {
-    if (!profile) return;
-    supabase.from("letter_template").select("id, name, storage_path").eq("business_id", profile.business_id).order("name").then(({ data, error: err }) => {
-      if (err) setError(err.message);
-      else setTemplates(data || []);
-    });
-    supabase.from("business").select("name").eq("id", profile.business_id).single().then(({ data }) => setBusiness(data || null));
-  }, [profile]);
-
   useEffect(refreshDocuments, [customer?.id]);
 
   async function uploadAndRegister({ description, fileName, blobOrFile, mimeType, source }) {
@@ -112,33 +99,6 @@ export default function DocumentsPanel({ customer, pitch, caravan, label }) {
       created_by_profile_id: profile.id,
     });
     if (insertErr) throw insertErr;
-  }
-
-  async function handleCreate(e) {
-    e.preventDefault();
-    if (!createDescription.trim() || !templateId) return;
-    const template = templates.find((t) => t.id === templateId);
-    if (!template) return;
-
-    setCreating(true);
-    setError(null);
-    try {
-      const { data: blob, error: dlErr } = await supabase.storage.from("letter-templates").download(template.storage_path);
-      if (dlErr) throw dlErr;
-      const arrayBuffer = await blob.arrayBuffer();
-
-      const data = buildLetterMergeData({ customer, pitch, caravan, business });
-      const merged = mergeDocxTemplate(arrayBuffer, data);
-      const fileName = `${sanitizeFileName(createDescription.trim())} - ${new Date().toISOString().slice(0, 10)}.docx`;
-
-      await uploadAndRegister({ description: createDescription.trim(), fileName, blobOrFile: merged, mimeType: DOCX_MIME, source: "generated" });
-      setCreateDescription("");
-      setTemplateId("");
-      refreshDocuments();
-    } catch (err) {
-      setError(err.message || err.properties?.errors?.map((e) => e.message).join("; ") || String(err));
-    }
-    setCreating(false);
   }
 
   async function handleImport(e) {
@@ -216,28 +176,6 @@ export default function DocumentsPanel({ customer, pitch, caravan, label }) {
   return (
     <div>
       <div style={subLabelStyle}>{label || "Documents"}</div>
-
-      <form onSubmit={handleCreate}>
-        <div style={{ ...subLabelStyle, margin: "0 0 8px" }}>Create document</div>
-        <input
-          value={createDescription}
-          onChange={(e) => setCreateDescription(e.target.value)}
-          placeholder="Brief description, e.g. letter regarding repair to caravan"
-          style={fieldStyle}
-        />
-        <div style={{ display: "flex", gap: "8px" }}>
-          <select value={templateId} onChange={(e) => setTemplateId(e.target.value)} style={{ ...fieldStyle, flex: 1 }}>
-            <option value="">Select a template…</option>
-            {templates.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
-          <button type="submit" disabled={!createDescription.trim() || !templateId || creating} style={buttonStyle.primary}>
-            {creating ? "Creating…" : "Create"}
-          </button>
-        </div>
-        {templates.length === 0 && <p style={{ fontSize: "12px", color: colors.inkSoft, marginTop: "-6px" }}>No letter templates yet — add one under Admin &gt; Letter Templates.</p>}
-      </form>
 
       <form onSubmit={handleImport}>
         <div style={{ ...subLabelStyle, margin: "14px 0 8px" }}>Import existing document</div>

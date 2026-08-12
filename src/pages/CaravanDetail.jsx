@@ -59,6 +59,12 @@ function ExpiryField({ label, value, onChange }) {
   );
 }
 
+// Andy, 12 Aug 2026: editing an existing caravan moved entirely onto
+// the combined Unit page -- this screen is now create-only. Landing
+// here with a real id (an old bookmark, a stale link) resolves its
+// current placement and bounces straight to that pitch's Caravan tab;
+// off-park caravans have nowhere useful to go, so this just says so
+// rather than reviving the old standalone edit form.
 export default function CaravanDetail() {
   const { id } = useParams();
   const isNew = id === "new";
@@ -71,12 +77,12 @@ export default function CaravanDetail() {
   const [types, setTypes] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [conditions, setConditions] = useState([]);
-  const [placement, setPlacement] = useState(undefined); // undefined = not checked yet, null = off-park
-  const [status, setStatus] = useState("idle"); // idle | saving | saved | error
+  const [status, setStatus] = useState("idle"); // idle | saving | error
   const [error, setError] = useState(null);
+  const [offPark, setOffPark] = useState(false);
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || !isNew) return;
     Promise.all([
       supabase.from("caravan_type").select("id, name").eq("business_id", profile.business_id).order("name"),
       supabase.from("caravan_status").select("id, name").eq("business_id", profile.business_id).order("name"),
@@ -86,22 +92,21 @@ export default function CaravanDetail() {
       setStatuses(s || []);
       setConditions(c || []);
     });
-  }, [profile]);
+  }, [profile, isNew]);
 
   useEffect(() => {
-    setStatus("idle");
     if (isNew) return;
-    supabase.from("caravan").select("*").eq("id", id).single().then(({ data, error: err }) => {
-      if (err) setError(err.message);
-      else setForm({ ...data, model_year: data.model_year ?? "", build_year: data.build_year ?? "", length: data.length ?? "", width: data.width ?? "", bedrooms: data.bedrooms ?? "", berths: data.berths ?? "" });
-    });
+    setOffPark(false);
     supabase
       .from("placement")
-      .select("pitch:pitch_id(number, area:area_id(name))")
+      .select("pitch_id")
       .eq("caravan_id", id)
       .is("end_date", null)
       .maybeSingle()
-      .then(({ data }) => setPlacement(data?.pitch || null));
+      .then(({ data }) => {
+        if (data?.pitch_id) navigate(`/units/${data.pitch_id}?tab=caravan`, { replace: true, state: origin });
+        else setOffPark(true);
+      });
   }, [id]);
 
   async function handleSave(e) {
@@ -126,54 +131,34 @@ export default function CaravanDetail() {
       condition_id: form.condition_id || null,
     };
 
-    if (isNew) {
-      const { data, error: err } = await supabase.from("caravan").insert(payload).select("id").single();
-      if (err) {
-        setStatus("error");
-        setError(err.message);
-        return;
-      }
-      navigate(`/caravans/${data.id}`);
-      return;
-    }
-
-    const { error: err } = await supabase.from("caravan").update(payload).eq("id", id);
+    const { error: err } = await supabase.from("caravan").insert(payload);
     if (err) {
-      setStatus("error");
-      setError(err.message);
-      return;
-    }
-    setStatus("saved");
-  }
-
-  async function handleDelete() {
-    const { error: err } = await supabase.from("caravan").delete().eq("id", id);
-    if (err) {
+      setStatus("idle");
       setError(err.message);
       return;
     }
     navigate("/caravans");
   }
 
-  if (!form) return <p style={{ padding: "24px", color: colors.inkSoft }}>Loading…</p>;
+  if (!isNew) {
+    if (offPark) {
+      return (
+        <div style={{ padding: "24px", maxWidth: "600px", margin: "0 auto" }}>
+          <Link to={origin.originPath} style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back to {origin.originLabel}</Link>
+          <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "8px 0 12px" }}>Off-park</h1>
+          <p style={{ color: colors.inkSoft, fontSize: "13.5px" }}>
+            This caravan isn't sited on a pitch right now, so there's no combined screen to open. Site it on a pitch from that pitch's Caravan tab to edit its details.
+          </p>
+        </div>
+      );
+    }
+    return <p style={{ padding: "24px", color: colors.inkSoft }}>Loading…</p>;
+  }
 
   return (
     <div style={{ padding: "24px", maxWidth: "600px", margin: "0 auto" }}>
       <Link to={origin.originPath} style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back to {origin.originLabel}</Link>
-      <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "8px 0 20px" }}>
-        {isNew ? "New caravan" : `${form.make || ""} ${form.model || ""}`.trim() || "Caravan"}
-      </h1>
-
-      {!isNew && placement !== undefined && (
-        <div style={{ ...cardStyle, padding: "12px 16px", marginBottom: "16px", background: colors.bg, border: "none" }}>
-          <span style={{ fontSize: "13px", color: colors.inkSoft }}>Currently: </span>
-          {placement ? (
-            <span style={{ fontSize: "13px", color: colors.ink, fontWeight: 600 }}>{placement.number} ({placement.area?.name})</span>
-          ) : (
-            <span style={{ fontSize: "13px", color: colors.ink }}>Off-park</span>
-          )}
-        </div>
-      )}
+      <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "8px 0 20px" }}>New caravan</h1>
 
       <form onSubmit={handleSave}>
         <div style={{ ...cardStyle, padding: "20px 24px", marginBottom: "16px" }}>
@@ -240,15 +225,11 @@ export default function CaravanDetail() {
         </div>
 
         {error && <p style={{ color: colors.immediate, fontSize: "13px" }}>{error}</p>}
-        {status === "saved" && <p style={{ color: colors.success, fontSize: "13px" }}>Saved.</p>}
 
         <div style={{ display: "flex", gap: "8px", marginBottom: "24px" }}>
           <button type="submit" disabled={status === "saving"} style={buttonStyle.primary}>
-            {status === "saving" ? "Saving…" : isNew ? "Create caravan" : "Save changes"}
+            {status === "saving" ? "Saving…" : "Create caravan"}
           </button>
-          {!isNew && (
-            <button type="button" onClick={handleDelete} style={{ ...buttonStyle.secondary, color: colors.immediate }}>Delete</button>
-          )}
         </div>
       </form>
     </div>

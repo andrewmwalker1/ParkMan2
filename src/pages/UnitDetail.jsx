@@ -61,6 +61,7 @@ function CustomerPicker({ onPick }) {
     supabase
       .from("customer")
       .select("id, customer1_first_name, customer1_surname, customer2_first_name, customer2_surname, customer1_phone")
+      .is("deleted_at", null)
       .then(({ data }) => setAll(data || []));
   }, []);
 
@@ -106,6 +107,7 @@ function CaravanPicker({ onPick }) {
     supabase
       .from("caravan")
       .select("id, make, model, key_number, serial_number")
+      .is("deleted_at", null)
       .then(({ data }) => setAll(data || []));
     supabase
       .from("placement")
@@ -153,7 +155,7 @@ function CaravanPicker({ onPick }) {
 // stay on the full Customer record, reached via the link at the
 // bottom), and separately handles the "no one assigned yet" state via
 // CustomerPicker.
-function CustomerCard({ title, customer, editable, onSave, onAssign, onRemove, blockedReason }) {
+function CustomerCard({ title, customer, editable, onSave, onAssign, onRemove, onDelete, blockedReason }) {
   const [form, setForm] = useState(null);
   const [status, setStatus] = useState("idle");
   const [picking, setPicking] = useState(false);
@@ -298,7 +300,12 @@ function CustomerCard({ title, customer, editable, onSave, onAssign, onRemove, b
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             {editable && <button type="submit" disabled={status === "saving"} style={buttonStyle.primary}>{status === "saving" ? "Saving…" : "Save changes"}</button>}
             {form.customer1_email && <a href={buildMailto(form)} style={{ ...buttonStyle.secondary, textDecoration: "none" }}>✉ Email</a>}
-            {editable && onRemove && <button type="button" onClick={onRemove} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Remove</button>}
+            {editable && (onRemove || onDelete) && (
+              <div style={{ display: "flex", gap: "8px", marginLeft: "auto" }}>
+                {onRemove && <button type="button" onClick={onRemove} style={{ ...buttonStyle.secondary, color: colors.immediate }}>Remove</button>}
+                {onDelete && <button type="button" onClick={onDelete} style={{ ...buttonStyle.secondary, color: colors.immediate }}>Delete customer</button>}
+              </div>
+            )}
           </div>
         </form>
       )}
@@ -565,6 +572,32 @@ export default function UnitDetail() {
     else refresh();
   }
 
+  // Soft delete only (Andy, 12 Aug 2026: "we'll never physically
+  // delete, we will just flag as deleted and don't display the records
+  // in the search") -- flags the customer row so every list/search/
+  // picker query filters it out, without losing the data. Deleting the
+  // primary end-dates the whole Ownership row (same "customer has
+  // left" shape the data model already uses for zero current owners);
+  // deleting the secondary just clears that slot, same as Remove.
+  async function deleteCustomer(slot, customerId) {
+    if (!window.confirm("Delete this customer? It's hidden from lists and search from then on, but the record itself is kept.")) return;
+    setError(null);
+    if (ownership) {
+      const today = new Date().toISOString().slice(0, 10);
+      const { error: err } =
+        slot === "primary"
+          ? await supabase.from("ownership").update({ end_date: today }).eq("id", ownership.id)
+          : await supabase.from("ownership").update({ secondary_customer_id: null }).eq("id", ownership.id);
+      if (err) {
+        setError(err.message);
+        return;
+      }
+    }
+    const { error: err } = await supabase.from("customer").update({ deleted_at: new Date().toISOString() }).eq("id", customerId);
+    if (err) setError(err.message);
+    else refresh();
+  }
+
   // Sites caravanId on this pitch. If it's currently sited elsewhere
   // (currentPitchNumber, shown to the user in CaravanPicker before they
   // pick), that placement is end-dated first -- a caravan can only be
@@ -583,6 +616,24 @@ export default function UnitDetail() {
     if (!caravan) return;
     const today = new Date().toISOString().slice(0, 10);
     const { error: err } = await supabase.from("placement").update({ end_date: today }).eq("pitch_id", pitchId).is("end_date", null);
+    if (err) setError(err.message);
+    else refresh();
+  }
+
+  // Soft delete only, same policy as deleteCustomer above -- flags the
+  // caravan and, since a deleted caravan can't stay sited or owned,
+  // end-dates its current Placement and Ownership first (same rows
+  // Unsite/removeSecondary already end-date, just both at once).
+  async function deleteCaravanRecord() {
+    if (!caravan) return;
+    if (!window.confirm("Delete this caravan? It's hidden from lists and search from then on, but the record itself is kept.")) return;
+    setError(null);
+    const today = new Date().toISOString().slice(0, 10);
+    await supabase.from("placement").update({ end_date: today }).eq("pitch_id", pitchId).is("end_date", null);
+    if (ownership) {
+      await supabase.from("ownership").update({ end_date: today }).eq("id", ownership.id);
+    }
+    const { error: err } = await supabase.from("caravan").update({ deleted_at: new Date().toISOString() }).eq("id", caravan.id);
     if (err) setError(err.message);
     else refresh();
   }
@@ -655,6 +706,10 @@ export default function UnitDetail() {
 
       {tab === "customer" && (
         <>
+          <div style={{ margin: "-4px 0 16px" }}>
+            <Link to={`/invoices/new?pitch=${pitchId}`} style={smallLinkStyle}>+ Create invoice for this pitch →</Link>
+          </div>
+
           <CustomerCard
             title="Primary customer"
             customer={primaryCustomer}
@@ -662,6 +717,7 @@ export default function UnitDetail() {
             blockedReason={!caravan ? "Add a caravan to this pitch first." : null}
             onSave={(fields) => saveCustomer(primaryCustomer.id, fields)}
             onAssign={(id) => assignOwner("primary", id)}
+            onDelete={primaryCustomer ? () => deleteCustomer("primary", primaryCustomer.id) : null}
           />
 
           {primaryCustomer && (
@@ -672,6 +728,7 @@ export default function UnitDetail() {
               onSave={(fields) => saveCustomer(secondaryCustomer.id, fields)}
               onAssign={(id) => assignOwner("secondary", id)}
               onRemove={secondaryCustomer ? removeSecondary : null}
+              onDelete={secondaryCustomer ? () => deleteCustomer("secondary", secondaryCustomer.id) : null}
             />
           )}
         </>
@@ -750,7 +807,10 @@ export default function UnitDetail() {
               {editable && (
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                   <button type="submit" disabled={caravanStatus === "saving"} style={buttonStyle.primary}>{caravanStatus === "saving" ? "Saving…" : "Save changes"}</button>
-                  <button type="button" onClick={removeCaravan} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Unsite</button>
+                  <div style={{ display: "flex", gap: "8px", marginLeft: "auto" }}>
+                    <button type="button" onClick={removeCaravan} style={{ ...buttonStyle.secondary, color: colors.immediate }}>Unsite</button>
+                    <button type="button" onClick={deleteCaravanRecord} style={{ ...buttonStyle.secondary, color: colors.immediate }}>Delete caravan</button>
+                  </div>
                 </div>
               )}
             </form>
@@ -820,10 +880,11 @@ export default function UnitDetail() {
             </div>
 
             {pitchStatus === "saved" && <p style={{ color: colors.success, fontSize: "13px" }}>Saved.</p>}
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              {editable && <button type="submit" disabled={pitchStatus === "saving"} style={buttonStyle.primary}>{pitchStatus === "saving" ? "Saving…" : "Save changes"}</button>}
-              <Link to={`/invoices/new?pitch=${pitchId}`} style={smallLinkStyle}>+ Create invoice for this pitch →</Link>
-            </div>
+            {editable && (
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <button type="submit" disabled={pitchStatus === "saving"} style={buttonStyle.primary}>{pitchStatus === "saving" ? "Saving…" : "Save changes"}</button>
+              </div>
+            )}
           </form>
           <NotesSection table="pitch_note" idColumn="pitch_id" id={pitchId} />
         </div>
@@ -835,10 +896,10 @@ export default function UnitDetail() {
             <p style={{ fontSize: "13px", color: colors.inkSoft }}>Assign a customer on the Customer tab first.</p>
           ) : (
             <>
-              <DocumentsPanel customer={primaryCustomer} pitch={pitch} caravan={caravan} label="Primary customer" />
+              <DocumentsPanel customer={primaryCustomer} label="Primary customer" />
               {secondaryCustomer && (
                 <div style={{ marginTop: "20px", paddingTop: "20px", borderTop: `1px solid ${colors.line}` }}>
-                  <DocumentsPanel customer={secondaryCustomer} pitch={pitch} caravan={caravan} label="Secondary customer" />
+                  <DocumentsPanel customer={secondaryCustomer} label="Secondary customer" />
                 </div>
               )}
             </>

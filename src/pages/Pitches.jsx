@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient.js";
 import { suggestSortKey } from "../lib/sortKey.js";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
@@ -18,7 +18,6 @@ const labelStyle = { display: "block", fontSize: "12px", color: colors.inkSoft, 
 
 function blankForm(defaults) {
   return {
-    id: null,
     area_id: defaults.area_id || "",
     pitch_band_id: "",
     type_id: defaults.type_id || "",
@@ -33,7 +32,6 @@ function blankForm(defaults) {
 }
 
 export default function Pitches() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [pitches, setPitches] = useState([]);
   const [areas, setAreas] = useState([]);
   const [bands, setBands] = useState([]);
@@ -62,18 +60,6 @@ export default function Pitches() {
   }
 
   useEffect(refresh, []);
-
-  // Global search (src/components/GlobalSearch.jsx) links straight to a
-  // pitch via ?open=<id> -- there's no dedicated /pitches/:id route since
-  // editing is an inline modal here, so this is how a search result opens
-  // the right one instead of just landing on the unfiltered list.
-  useEffect(() => {
-    const openId = searchParams.get("open");
-    if (!openId || pitches.length === 0) return;
-    const match = pitches.find((p) => p.id === openId);
-    if (match) openEdit(match);
-    setSearchParams({}, { replace: true });
-  }, [pitches, searchParams]);
 
   const visiblePitches = useMemo(() => {
     const needle = search.toLowerCase();
@@ -117,23 +103,6 @@ export default function Pitches() {
     });
   }
 
-  function openEdit(p) {
-    setError(null);
-    setForm({
-      id: p.id,
-      area_id: p.area_id,
-      pitch_band_id: p.pitch_band_id || "",
-      type_id: p.type_id,
-      status_id: p.status_id,
-      number: p.number,
-      sort_key: p.sort_key,
-      capacity: String(p.capacity),
-      length: p.length ?? "",
-      width: p.width ?? "",
-      sortKeyTouched: true,
-    });
-  }
-
   function handleNumberChange(value) {
     setForm((f) => ({
       ...f,
@@ -156,9 +125,7 @@ export default function Pitches() {
       length: form.length === "" ? null : Number(form.length),
       width: form.width === "" ? null : Number(form.width),
     };
-    const { error: err } = form.id
-      ? await supabase.from("pitch").update(payload).eq("id", form.id)
-      : await supabase.from("pitch").insert(payload);
+    const { error: err } = await supabase.from("pitch").insert(payload);
     if (err) {
       setError(err.message);
       return;
@@ -214,7 +181,6 @@ export default function Pitches() {
             </div>
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
-            <button onClick={() => openEdit(p)} style={buttonStyle.secondary}>Edit</button>
             <button onClick={() => handleDelete(p.id)} style={{ ...buttonStyle.secondary, color: colors.immediate }}>Delete</button>
           </div>
         </div>
@@ -224,9 +190,7 @@ export default function Pitches() {
       {form && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(49, 56, 45, 0.5)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px", overflowY: "auto", zIndex: 100 }}>
           <div style={{ ...cardStyle, padding: "20px", width: "100%", maxWidth: "440px" }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.brandDark, marginTop: 0 }}>
-              {form.id ? "Edit pitch" : "New pitch"}
-            </h2>
+            <h2 style={{ fontFamily: fonts.display, fontSize: "16px", color: colors.brandDark, marginTop: 0 }}>New pitch</h2>
             <form onSubmit={handleSave}>
               <label style={labelStyle}>Area</label>
               <select required value={form.area_id} onChange={(e) => handleAreaChange(e.target.value)} style={fieldStyle}>
@@ -285,7 +249,7 @@ export default function Pitches() {
 
               {error && <p style={{ color: colors.immediate, fontSize: "13px" }}>{error}</p>}
               <div style={{ display: "flex", gap: "8px" }}>
-                <button type="submit" style={buttonStyle.primary}>{form.id ? "Save changes" : "Create pitch"}</button>
+                <button type="submit" style={buttonStyle.primary}>Create pitch</button>
                 <button type="button" onClick={() => setForm(null)} style={buttonStyle.secondary}>Cancel</button>
               </div>
             </form>

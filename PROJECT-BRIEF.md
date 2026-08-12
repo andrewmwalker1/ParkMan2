@@ -1,10 +1,12 @@
 # ParkMan2 — Project Briefing
 
-**Last updated:** 7 Aug 2026 — Customer/Caravan/Pitch/Business/Park/Area
-fully scoped, Phase 1 schema+RLS+auth built and deployed live at
-andrewmwalker1.github.io/ParkMan2 (running in a temporary shared schema
-inside Hub's Supabase project — see "Repo & hosting" below), multi-park
-staff access control documented as a future requirement
+**Last updated:** 12 Aug 2026 — the combined Unit page (`/units/:pitchId`)
+is now the only place Customer/Caravan/Pitch records are edited;
+Customers/Caravans/Pitches list screens are read-only browse (Pitches
+keeps create), Customer/Caravan deletion is soft (flag + hide, never a
+real DELETE), and document creation-from-template is removed for now.
+See "v1.5 — Unit page becomes the only edit surface" near the end of
+this file for the full change.
 
 ## Who you're talking to
 
@@ -1428,6 +1430,58 @@ Phase 1 or 2 — noted here so the roadmap accounts for it.
   "briefly owns at two parks" case falls out for free as two
   simultaneously-open Ownership/Placement chains — no special-casing
   needed.
+
+## v1.5 — Unit page becomes the only edit surface, soft delete, document creation removed (12 Aug 2026)
+
+Andy: the letter-from-template flow just added to the document register
+"isn't going to work how I want it to" — removed from `DocumentsPanel.jsx`
+for now (state, `handleCreate`, the `letterMerge.js` import). Import/view/
+search of existing documents is untouched. `letter_template` (the Admin >
+Letter Templates management screen and its data) is deliberately left
+alone — the data may still be useful once document creation is
+redesigned, just nothing consumes it right now.
+
+Bigger structural change, also Andy's call: **the combined Unit page
+(`/units/:pitchId`, see "Unit page" section above) is now the only place
+Customer, Caravan, and Pitch records get edited.** Before making this
+change, the Unit page was checked against all three standalone screens
+for feature parity — it already had it (full field set on every tab,
+notes, salutation builders, expiry warnings, the customer/caravan
+pickers), the only gap was Delete, addressed below.
+
+- **Customers.jsx / Caravans.jsx** are now read-only browse/search
+  (kept in the sidebar — Andy chose this over removing them from nav
+  entirely). Each row resolves the record's current pitch (Ownership/
+  Placement chain, same one `resolveCustomerPitch.js` already walked)
+  and links straight into that pitch's Customer/Caravan tab; a
+  prospective customer or off-park caravan with no current pitch shows
+  plainly instead of linking anywhere. "+Add" still creates via
+  `CustomerDetail.jsx`/`CaravanDetail.jsx` in `new` mode.
+- **CustomerDetail.jsx / CaravanDetail.jsx** are now create-only.
+  Landing on a real id (old bookmark, a stale link, the Search
+  Results/Park list fallback for a record with no current pitch) no
+  longer shows the old full edit form — it resolves the current pitch
+  and redirects to the Unit page, or shows a plain "not currently on a
+  pitch" message if there isn't one.
+- **Pitches.jsx** keeps its list, search, area filter, +Add pitch, and
+  Delete — only the inline "Edit" quick-modal was removed (and the
+  `?open=<id>` auto-open effect that fed it, unused by anything else),
+  since the Unit page's Pitch tab already fully superseded it.
+- **"+ Create invoice for this pitch"** moved from the Pitch tab to the
+  Customer tab, matching where Andy actually goes to raise one.
+- **Soft delete, never physical (Andy, 12 Aug 2026):** "we'll never
+  physically delete, we will just flag as deleted and don't display
+  the records in the search." Added nullable `deleted_at` to `customer`
+  and `caravan` (`supabase/26-soft-delete.sql`) — every list/search/
+  picker query filters `.is("deleted_at", null)`. Delete buttons live
+  on the Unit page's Customer/Caravan tabs (behind a confirm dialog):
+  deleting a caravan end-dates its current Placement and Ownership
+  first (can't stay sited/owned once gone); deleting the primary
+  customer end-dates the whole Ownership row (same "customer has left"
+  shape the data model already uses for zero current owners); deleting
+  the secondary just clears that slot. Pitch itself still hard-deletes
+  via Pitches.jsx — Andy's instruction was about Customer/Caravan
+  specifically, and Pitch has no soft-delete column.
 
 ## Open questions / not yet decided
 

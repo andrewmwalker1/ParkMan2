@@ -25,9 +25,9 @@ export async function loadOperationalRows() {
   const [{ data: pitches }, { data: placements }, { data: caravans }, { data: ownerships }, { data: customers }] = await Promise.all([
     supabase.from("pitch").select("id, number, sort_key, area:area_id(name, code)"),
     supabase.from("placement").select("pitch_id, caravan_id").is("end_date", null),
-    supabase.from("caravan").select("id, make, model, key_number, serial_number, for_sale"),
+    supabase.from("caravan").select("id, make, model, key_number, serial_number, for_sale").is("deleted_at", null),
     supabase.from("ownership").select("caravan_id, primary_customer_id, secondary_customer_id").is("end_date", null),
-    supabase.from("customer").select("id, customer1_first_name, customer1_surname, customer1_phone, customer1_email, customer2_first_name, customer2_surname"),
+    supabase.from("customer").select("id, customer1_first_name, customer1_surname, customer1_phone, customer1_email, customer2_first_name, customer2_surname").is("deleted_at", null),
   ]);
 
   const caravanById = new Map((caravans || []).map((c) => [c.id, c]));

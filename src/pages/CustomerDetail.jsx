@@ -3,10 +3,8 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../lib/AuthContext.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 import AddressFields from "./admin/AddressFields.jsx";
-import NotesSection from "../components/NotesSection.jsx";
 import LightningButton from "../components/LightningButton.jsx";
-import DocumentsPanel from "../components/DocumentsPanel.jsx";
-import { buildCorrespondenceSalutation, buildAddressSalutation, buildMailto } from "../lib/salutations.js";
+import { buildCorrespondenceSalutation, buildAddressSalutation } from "../lib/salutations.js";
 import { resolveCustomerPitchAndCaravan } from "../lib/resolveCustomerPitch.js";
 import { colors, fonts, cardStyle, buttonStyle } from "../lib/theme.js";
 
@@ -33,6 +31,12 @@ const blank = {
   nok2_name: "", nok2_relationship: "", nok2_phone: "", nok2_email: "",
 };
 
+// Andy, 12 Aug 2026: editing an existing customer moved entirely onto
+// the combined Unit page -- this screen is now create-only. Landing
+// here with a real id (an old bookmark, a stale link) resolves that
+// customer's current pitch and bounces straight to its Customer tab;
+// with no current pitch, there's nowhere useful to send them, so this
+// just says so rather than reviving the old standalone edit form.
 export default function CustomerDetail() {
   const { id } = useParams();
   const isNew = id === "new";
@@ -42,30 +46,16 @@ export default function CustomerDetail() {
   const origin = location.state?.originPath ? location.state : { originPath: "/customers", originLabel: "Customers" };
 
   const [form, setForm] = useState(isNew ? blank : null);
-  const [status, setStatus] = useState("idle"); // idle | saving | saved | error
+  const [status, setStatus] = useState("idle"); // idle | saving | error
   const [error, setError] = useState(null);
-  const [pitch, setPitch] = useState(null);
-  const [caravan, setCaravan] = useState(null);
+  const [notOnPitch, setNotOnPitch] = useState(false);
 
   useEffect(() => {
     if (isNew) return;
-    resolveCustomerPitchAndCaravan(id).then(({ pitch, caravan }) => {
-      setPitch(pitch);
-      setCaravan(caravan);
-    });
-  }, [id]);
-
-  useEffect(() => {
-    // React Router reuses this component instance across id changes (same
-    // route element) rather than remounting -- without this, `status`
-    // from the just-completed create (e.g. "saving") stays stuck after
-    // navigate() lands on the new /customers/:id, leaving the button
-    // frozen on "Saving..." even though the save actually succeeded.
-    setStatus("idle");
-    if (isNew) return;
-    supabase.from("customer").select("*").eq("id", id).single().then(({ data, error: err }) => {
-      if (err) setError(err.message);
-      else setForm(data);
+    setNotOnPitch(false);
+    resolveCustomerPitchAndCaravan(id).then(({ pitch }) => {
+      if (pitch?.id) navigate(`/units/${pitch.id}?tab=customer`, { replace: true, state: origin });
+      else setNotOnPitch(true);
     });
   }, [id]);
 
@@ -75,43 +65,34 @@ export default function CustomerDetail() {
     setError(null);
     const payload = { ...form, business_id: profile.business_id };
 
-    if (isNew) {
-      const { data, error: err } = await supabase.from("customer").insert(payload).select("id").single();
-      if (err) {
-        setStatus("error");
-        setError(err.message);
-        return;
-      }
-      navigate(`/customers/${data.id}`);
-      return;
-    }
-
-    const { error: err } = await supabase.from("customer").update(payload).eq("id", id);
+    const { error: err } = await supabase.from("customer").insert(payload);
     if (err) {
-      setStatus("error");
-      setError(err.message);
-      return;
-    }
-    setStatus("saved");
-  }
-
-  async function handleDelete() {
-    const { error: err } = await supabase.from("customer").delete().eq("id", id);
-    if (err) {
+      setStatus("idle");
       setError(err.message);
       return;
     }
     navigate("/customers");
   }
 
-  if (!form) return <p style={{ padding: "24px", color: colors.inkSoft }}>Loading…</p>;
+  if (!isNew) {
+    if (notOnPitch) {
+      return (
+        <div style={{ padding: "24px", maxWidth: "600px", margin: "0 auto" }}>
+          <Link to={origin.originPath} style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back to {origin.originLabel}</Link>
+          <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "8px 0 12px" }}>Not currently on a pitch</h1>
+          <p style={{ color: colors.inkSoft, fontSize: "13.5px" }}>
+            This customer isn't sited on a pitch right now, so there's no combined screen to open. Assign them to a pitch from that pitch's Customer tab to edit their details.
+          </p>
+        </div>
+      );
+    }
+    return <p style={{ padding: "24px", color: colors.inkSoft }}>Loading…</p>;
+  }
 
   return (
     <div style={{ padding: "24px", maxWidth: "600px", margin: "0 auto" }}>
       <Link to={origin.originPath} style={{ color: colors.inkSoft, fontSize: "13px", textDecoration: "none" }}>← Back to {origin.originLabel}</Link>
-      <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "8px 0 20px" }}>
-        {isNew ? "New customer" : `${form.customer1_first_name} ${form.customer1_surname}`}
-      </h1>
+      <h1 style={{ fontFamily: fonts.display, color: colors.brandDark, margin: "8px 0 20px" }}>New customer</h1>
 
       <form onSubmit={handleSave}>
         <div style={{ ...cardStyle, padding: "20px 24px", marginBottom: "16px" }}>
@@ -197,32 +178,13 @@ export default function CustomerDetail() {
         </div>
 
         {error && <p style={{ color: colors.immediate, fontSize: "13px" }}>{error}</p>}
-        {status === "saved" && <p style={{ color: colors.success, fontSize: "13px" }}>Saved.</p>}
 
         <div style={{ display: "flex", gap: "8px", marginBottom: "24px" }}>
           <button type="submit" disabled={status === "saving"} style={buttonStyle.primary}>
-            {status === "saving" ? "Saving…" : isNew ? "Create customer" : "Save changes"}
+            {status === "saving" ? "Saving…" : "Create customer"}
           </button>
-          {!isNew && form.customer1_email && (
-            <a href={buildMailto(form)} style={{ ...buttonStyle.secondary, textDecoration: "none" }}>✉ Email</a>
-          )}
-          {!isNew && (
-            <button type="button" onClick={handleDelete} style={{ ...buttonStyle.secondary, color: colors.immediate, marginLeft: "auto" }}>Delete</button>
-          )}
         </div>
       </form>
-
-      {!isNew && (
-        <div style={{ ...cardStyle, padding: "20px 24px", marginBottom: "16px" }}>
-          <DocumentsPanel customer={form} pitch={pitch} caravan={caravan} />
-        </div>
-      )}
-
-      {!isNew && (
-        <div style={{ ...cardStyle, padding: "20px 24px" }}>
-          <NotesSection table="customer_note" idColumn="customer_id" id={id} />
-        </div>
-      )}
     </div>
   );
 }

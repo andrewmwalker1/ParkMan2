@@ -12,9 +12,17 @@ const fieldStyle = {
   fontFamily: fonts.body,
 };
 
+// Andy, 12 Aug 2026: editing moved entirely onto the combined Unit
+// page -- this list is now read-only browse/search. Each row resolves
+// its current pitch (via Ownership -> Placement, same chain
+// resolveCustomerPitch.js walks) and links straight into that pitch's
+// Customer tab; a customer with no current pitch (prospective, or has
+// left) shows plainly instead of linking anywhere, since there's no
+// standalone edit screen left to send them to.
 export default function Customers() {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
+  const [pitchIdByCustomerId, setPitchIdByCustomerId] = useState({});
   const [search, setSearch] = useState("");
   const [error, setError] = useState(null);
 
@@ -22,11 +30,30 @@ export default function Customers() {
     supabase
       .from("customer")
       .select("id, customer1_first_name, customer1_surname, customer1_phone, customer1_email, customer2_first_name, customer2_surname")
+      .is("deleted_at", null)
       .order("customer1_surname")
       .then(({ data, error: err }) => {
         if (err) setError(err.message);
         else setCustomers(data || []);
       });
+
+    Promise.all([
+      supabase.from("ownership").select("caravan_id, primary_customer_id, secondary_customer_id").is("end_date", null),
+      supabase.from("placement").select("caravan_id, pitch_id").is("end_date", null),
+    ]).then(([{ data: ownerships }, { data: placements }]) => {
+      const pitchIdByCaravanId = {};
+      (placements || []).forEach((p) => {
+        if (p.pitch_id) pitchIdByCaravanId[p.caravan_id] = p.pitch_id;
+      });
+      const map = {};
+      (ownerships || []).forEach((o) => {
+        const pitchId = pitchIdByCaravanId[o.caravan_id];
+        if (!pitchId) return;
+        if (o.primary_customer_id) map[o.primary_customer_id] = pitchId;
+        if (o.secondary_customer_id) map[o.secondary_customer_id] = pitchId;
+      });
+      setPitchIdByCustomerId(map);
+    });
   }, []);
 
   const visible = useMemo(() => {
@@ -55,19 +82,35 @@ export default function Customers() {
 
       {error && <p style={{ color: colors.immediate, fontSize: "13px" }}>{error}</p>}
 
-      {visible.map((c) => (
-        <Link
-          key={c.id}
-          to={`/customers/${c.id}`}
-          style={{ ...cardStyle, padding: "12px 16px", marginBottom: "8px", display: "block", textDecoration: "none", color: "inherit" }}
-        >
-          <div style={{ fontWeight: 600 }}>
-            {c.customer1_first_name} {c.customer1_surname}
-            {c.customer2_first_name && ` & ${c.customer2_first_name} ${c.customer2_surname}`}
+      {visible.map((c) => {
+        const pitchId = pitchIdByCustomerId[c.id];
+        const content = (
+          <>
+            <div style={{ fontWeight: 600 }}>
+              {c.customer1_first_name} {c.customer1_surname}
+              {c.customer2_first_name && ` & ${c.customer2_first_name} ${c.customer2_surname}`}
+            </div>
+            <div style={{ fontSize: "12px", color: colors.inkSoft }}>
+              {[c.customer1_phone, c.customer1_email].filter(Boolean).join(" · ")}
+              {!pitchId && <> · not currently on a pitch</>}
+            </div>
+          </>
+        );
+        return pitchId ? (
+          <Link
+            key={c.id}
+            to={`/units/${pitchId}?tab=customer`}
+            state={{ originPath: "/customers", originLabel: "Customers" }}
+            style={{ ...cardStyle, padding: "12px 16px", marginBottom: "8px", display: "block", textDecoration: "none", color: "inherit" }}
+          >
+            {content}
+          </Link>
+        ) : (
+          <div key={c.id} style={{ ...cardStyle, padding: "12px 16px", marginBottom: "8px" }}>
+            {content}
           </div>
-          <div style={{ fontSize: "12px", color: colors.inkSoft }}>{[c.customer1_phone, c.customer1_email].filter(Boolean).join(" · ")}</div>
-        </Link>
-      ))}
+        );
+      })}
       {visible.length === 0 && <p style={{ color: colors.inkSoft }}>No customers match.</p>}
     </div>
   );

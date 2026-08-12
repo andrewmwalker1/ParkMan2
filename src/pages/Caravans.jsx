@@ -12,18 +12,25 @@ const fieldStyle = {
   fontFamily: fonts.body,
 };
 
+// Andy, 12 Aug 2026: editing moved entirely onto the combined Unit
+// page -- this list is now read-only browse/search. A sited caravan
+// links straight into its pitch's Caravan tab; an off-park caravan
+// (in for repair, between placements, on display) shows plainly, since
+// there's no standalone edit screen left to send it to.
 export default function Caravans() {
   const navigate = useNavigate();
   const [caravans, setCaravans] = useState([]);
   const [search, setSearch] = useState("");
   const [error, setError] = useState(null);
   const [locations, setLocations] = useState({});
+  const [pitchIds, setPitchIds] = useState({});
   const [owners, setOwners] = useState({});
 
   useEffect(() => {
     supabase
       .from("caravan")
       .select("id, make, model, colour, key_number, serial_number, for_sale, type:type_id(name), status:status_id(name)")
+      .is("deleted_at", null)
       .order("make")
       .then(({ data, error: err }) => {
         if (err) setError(err.message);
@@ -32,14 +39,17 @@ export default function Caravans() {
 
     supabase
       .from("placement")
-      .select("caravan_id, pitch:pitch_id(number)")
+      .select("caravan_id, pitch_id, pitch:pitch_id(number)")
       .is("end_date", null)
       .then(({ data }) => {
-        const map = {};
+        const nameMap = {};
+        const idMap = {};
         (data || []).forEach((p) => {
-          if (p.pitch) map[p.caravan_id] = p.pitch.number;
+          if (p.pitch) nameMap[p.caravan_id] = p.pitch.number;
+          if (p.pitch_id) idMap[p.caravan_id] = p.pitch_id;
         });
-        setLocations(map);
+        setLocations(nameMap);
+        setPitchIds(idMap);
       });
 
     supabase
@@ -79,36 +89,45 @@ export default function Caravans() {
 
       {error && <p style={{ color: colors.immediate, fontSize: "13px" }}>{error}</p>}
 
-      {visible.map((c) => (
-        <Link
-          key={c.id}
-          to={`/caravans/${c.id}`}
-          style={{ ...cardStyle, padding: "12px 16px", marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", textDecoration: "none", color: "inherit" }}
-        >
-          <div>
-            <div style={{ fontWeight: 600 }}>
-              {c.make} {c.model}
-              {c.for_sale && (
-                <span style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 600, color: colors.brand, background: "#FBF1DA", padding: "2px 8px", borderRadius: "999px" }}>
-                  For sale
-                </span>
-              )}
+      {visible.map((c) => {
+        const pitchId = pitchIds[c.id];
+        const rowStyle = { ...cardStyle, padding: "12px 16px", marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", textDecoration: "none", color: "inherit" };
+        const content = (
+          <>
+            <div>
+              <div style={{ fontWeight: 600 }}>
+                {c.make} {c.model}
+                {c.for_sale && (
+                  <span style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 600, color: colors.brand, background: "#FBF1DA", padding: "2px 8px", borderRadius: "999px" }}>
+                    For sale
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: "12px", color: colors.inkSoft }}>
+                {[c.colour, c.type?.name, c.status?.name].filter(Boolean).join(" · ")}
+              </div>
+              <div style={{ fontSize: "12px", color: colors.inkSoft }}>
+                {locations[c.id] || "Off-park"}
+                {owners[c.id] && <> · {owners[c.id]}</>}
+              </div>
             </div>
-            <div style={{ fontSize: "12px", color: colors.inkSoft }}>
-              {[c.colour, c.type?.name, c.status?.name].filter(Boolean).join(" · ")}
-            </div>
-            <div style={{ fontSize: "12px", color: colors.inkSoft }}>
-              {locations[c.id] || "Off-park"}
-              {owners[c.id] && <> · {owners[c.id]}</>}
-            </div>
+            {c.key_number && (
+              <div style={{ fontFamily: fonts.mono, fontSize: "13px", color: colors.brandDark, background: colors.bg, padding: "4px 10px", borderRadius: "8px" }}>
+                {c.key_number}
+              </div>
+            )}
+          </>
+        );
+        return pitchId ? (
+          <Link key={c.id} to={`/units/${pitchId}?tab=caravan`} state={{ originPath: "/caravans", originLabel: "Caravans" }} style={rowStyle}>
+            {content}
+          </Link>
+        ) : (
+          <div key={c.id} style={rowStyle}>
+            {content}
           </div>
-          {c.key_number && (
-            <div style={{ fontFamily: fonts.mono, fontSize: "13px", color: colors.brandDark, background: colors.bg, padding: "4px 10px", borderRadius: "8px" }}>
-              {c.key_number}
-            </div>
-          )}
-        </Link>
-      ))}
+        );
+      })}
       {visible.length === 0 && <p style={{ color: colors.inkSoft }}>No caravans match.</p>}
     </div>
   );
